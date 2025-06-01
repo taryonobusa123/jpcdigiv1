@@ -5,6 +5,7 @@ import BalanceCard from '../components/BalanceCard';
 import QuickActions from '../components/QuickActions';
 import PromoSection from '../components/PromoSection';
 import ServiceCategory from '../components/ServiceCategory';
+import BottomNavigation from '../components/BottomNavigation';
 import { 
   Bell, 
   CreditCard, 
@@ -51,46 +52,11 @@ const Index = () => {
         { name: 'Tri (3)', description: 'Pulsa & paket data Tri' },
         { name: 'Smartfren', description: 'Pulsa & paket data Smartfren' }
       ]
-    },
-    {
-      title: 'E-Wallet & Top Up',
-      icon: Download,
-      color: 'bg-blue-500',
-      services: [
-        { name: 'GoPay', description: 'Top up saldo GoPay', popular: true },
-        { name: 'OVO', description: 'Top up saldo OVO' },
-        { name: 'DANA', description: 'Top up saldo DANA' },
-        { name: 'LinkAja', description: 'Top up saldo LinkAja' },
-        { name: 'ShopeePay', description: 'Top up saldo ShopeePay' }
-      ]
-    },
-    {
-      title: 'BPJS & Asuransi',
-      icon: Settings,
-      color: 'bg-red-500',
-      services: [
-        { name: 'BPJS Kesehatan', description: 'Bayar iuran BPJS Kesehatan', popular: true },
-        { name: 'BPJS Ketenagakerjaan', description: 'Bayar iuran BPJS TK' },
-        { name: 'Asuransi Prudential', description: 'Bayar premi asuransi' },
-        { name: 'Asuransi AXA', description: 'Bayar premi AXA' }
-      ]
-    },
-    {
-      title: 'Gaming & Entertainment',
-      icon: HelpCircle,
-      color: 'bg-indigo-500',
-      services: [
-        { name: 'Mobile Legends', description: 'Diamond ML & battle pass', popular: true },
-        { name: 'Free Fire', description: 'Diamond FF & membership' },
-        { name: 'PUBG Mobile', description: 'UC PUBG & Royal Pass' },
-        { name: 'Steam Wallet', description: 'Top up Steam Wallet' },
-        { name: 'Google Play', description: 'Voucher Google Play' }
-      ]
     }
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-20">
       <Header />
       
       <main className="pb-6">
@@ -100,7 +66,7 @@ const Index = () => {
         
         <div className="mb-6">
           <div className="px-4 mb-4">
-            <h2 className="text-xl font-bold text-gray-800">Semua Layanan PPOB</h2>
+            <h2 className="text-xl font-bold text-gray-800">Layanan Populer</h2>
           </div>
           <div className="space-y-0">
             {serviceCategories.map((category, index) => (
@@ -138,6 +104,8 @@ const Index = () => {
           </div>
         </div>
       </main>
+
+      <BottomNavigation />
     </div>
   );
 };
