@@ -28,19 +28,19 @@ const PromoSection = () => {
   ];
 
   return (
-    <div className="mb-6">
+    <div className="px-4 mb-6">
       <h2 className="text-lg font-semibold text-gray-800 mb-4">Promo Menarik</h2>
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="flex space-x-3 overflow-x-auto pb-2">
         {promos.map((promo, index) => (
           <div
             key={index}
-            className={`bg-gradient-to-r ${promo.color} p-6 rounded-xl text-white shadow-lg hover:shadow-xl transition-shadow cursor-pointer`}
+            className={`bg-gradient-to-r ${promo.color} p-4 rounded-xl text-white shadow-lg hover:shadow-xl transition-shadow cursor-pointer flex-shrink-0 w-64`}
           >
-            <div className="text-4xl mb-3">{promo.image}</div>
-            <h3 className="font-bold text-lg mb-2">{promo.title}</h3>
+            <div className="text-3xl mb-2">{promo.image}</div>
+            <h3 className="font-bold text-base mb-2">{promo.title}</h3>
             <p className="text-sm opacity-90 mb-3">{promo.description}</p>
             <div className="flex items-center text-xs opacity-80">
-              <Clock className="w-4 h-4 mr-1" />
+              <Clock className="w-3 h-3 mr-1" />
               <span>Berlaku hingga {promo.validUntil}</span>
             </div>
           </div>

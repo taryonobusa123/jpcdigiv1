@@ -93,14 +93,16 @@ const Index = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      <main className="max-w-6xl mx-auto p-6">
+      <main className="pb-6">
         <BalanceCard />
         <QuickActions />
         <PromoSection />
         
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Semua Layanan PPOB</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="px-4 mb-4">
+            <h2 className="text-xl font-bold text-gray-800">Semua Layanan PPOB</h2>
+          </div>
+          <div className="space-y-0">
             {serviceCategories.map((category, index) => (
               <ServiceCategory
                 key={index}
@@ -114,8 +116,8 @@ const Index = () => {
         </div>
 
         {/* Recent Transactions */}
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Transaksi Terakhir</h3>
+        <div className="bg-white mx-4 rounded-xl shadow-md p-4">
+          <h3 className="text-base font-semibold text-gray-800 mb-4">Transaksi Terakhir</h3>
           <div className="space-y-3">
             {[
               { type: 'PLN Token', amount: '-Rp 100.000', status: 'Berhasil', time: '2 jam lalu' },
@@ -124,61 +126,18 @@ const Index = () => {
             ].map((transaction, index) => (
               <div key={index} className="flex justify-between items-center p-3 border border-gray-100 rounded-lg">
                 <div>
-                  <h4 className="font-medium text-gray-800">{transaction.type}</h4>
-                  <p className="text-gray-500 text-sm">{transaction.time}</p>
+                  <h4 className="font-medium text-gray-800 text-sm">{transaction.type}</h4>
+                  <p className="text-gray-500 text-xs">{transaction.time}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold text-gray-800">{transaction.amount}</p>
-                  <span className="text-green-600 text-sm">{transaction.status}</span>
+                  <p className="font-semibold text-gray-800 text-sm">{transaction.amount}</p>
+                  <span className="text-green-600 text-xs">{transaction.status}</span>
                 </div>
               </div>
             ))}
           </div>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="bg-gray-800 text-white py-8 mt-12">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="grid md:grid-cols-4 gap-6">
-            <div>
-              <h4 className="font-bold text-lg mb-4">PPOB Indonesia</h4>
-              <p className="text-gray-300 text-sm">
-                Platform pembayaran online terpercaya untuk semua kebutuhan tagihan dan pembelian digital Anda.
-              </p>
-            </div>
-            <div>
-              <h5 className="font-semibold mb-3">Layanan</h5>
-              <ul className="space-y-2 text-sm text-gray-300">
-                <li>Tagihan Listrik</li>
-                <li>Pulsa & Data</li>
-                <li>E-Wallet</li>
-                <li>Gaming</li>
-              </ul>
-            </div>
-            <div>
-              <h5 className="font-semibold mb-3">Bantuan</h5>
-              <ul className="space-y-2 text-sm text-gray-300">
-                <li>FAQ</li>
-                <li>Live Chat</li>
-                <li>Hubungi Kami</li>
-                <li>Panduan</li>
-              </ul>
-            </div>
-            <div>
-              <h5 className="font-semibold mb-3">Kontak</h5>
-              <div className="text-sm text-gray-300 space-y-2">
-                <p>📞 0804-1-500-000</p>
-                <p>📧 support@ppobindonesia.com</p>
-                <p>🕒 24/7 Customer Service</p>
-              </div>
-            </div>
-          </div>
-          <div className="border-t border-gray-700 mt-6 pt-6 text-center text-gray-400 text-sm">
-            © 2024 PPOB Indonesia. Semua hak dilindungi. Diawasi oleh Bank Indonesia & OJK.
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };
