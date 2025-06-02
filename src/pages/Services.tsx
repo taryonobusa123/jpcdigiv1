@@ -4,6 +4,7 @@ import {
   Bell, CreditCard, Upload, Download, Settings, HelpCircle,
   Search, Zap, Wifi, Smartphone, Gamepad2, CreditCard as CardIcon
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import BottomNavigation from '../components/BottomNavigation';
 
 const Services = () => {
@@ -15,11 +16,11 @@ const Services = () => {
       icon: Zap,
       color: 'bg-yellow-500',
       services: [
-        { name: 'PLN Pascabayar', description: 'Bayar tagihan listrik bulanan', popular: true },
-        { name: 'PLN Prabayar/Token', description: 'Beli token listrik prabayar' },
-        { name: 'PDAM', description: 'Bayar tagihan air' },
-        { name: 'Gas Negara (PGN)', description: 'Bayar tagihan gas' },
-        { name: 'Telepon Rumah', description: 'Bayar tagihan telepon Telkom' }
+        { name: 'PLN Pascabayar', description: 'Bayar tagihan listrik bulanan', popular: true, path: '/payment/electricity/pln-pascabayar' },
+        { name: 'PLN Prabayar/Token', description: 'Beli token listrik prabayar', path: '/payment/electricity/pln-prabayar-(token)' },
+        { name: 'PDAM', description: 'Bayar tagihan air', path: '/payment/water/pdam-jakarta' },
+        { name: 'Gas Negara (PGN)', description: 'Bayar tagihan gas', path: '/payment/gas/pgn' },
+        { name: 'Telepon Rumah', description: 'Bayar tagihan telepon Telkom', path: '/payment/telephone/telkom' }
       ]
     },
     {
@@ -27,11 +28,11 @@ const Services = () => {
       icon: Wifi,
       color: 'bg-purple-500',
       services: [
-        { name: 'IndiHome', description: 'Bayar tagihan internet Telkom', popular: true },
-        { name: 'First Media', description: 'Bayar layanan internet & TV' },
-        { name: 'MNC Vision', description: 'Bayar TV kabel MNC' },
-        { name: 'Transvision', description: 'Bayar TV satelit' },
-        { name: 'Biznet', description: 'Bayar internet Biznet' }
+        { name: 'IndiHome', description: 'Bayar tagihan internet Telkom', popular: true, path: '/service/indihome' },
+        { name: 'First Media', description: 'Bayar layanan internet & TV', path: '/service/first-media' },
+        { name: 'MNC Vision', description: 'Bayar TV kabel MNC', path: '/service/mnc-vision' },
+        { name: 'Transvision', description: 'Bayar TV satelit', path: '/service/transvision' },
+        { name: 'Biznet', description: 'Bayar internet Biznet', path: '/service/biznet' }
       ]
     },
     {
@@ -39,11 +40,11 @@ const Services = () => {
       icon: Smartphone,
       color: 'bg-green-500',
       services: [
-        { name: 'Telkomsel', description: 'Pulsa & paket data Telkomsel', popular: true },
-        { name: 'Indosat Ooredoo', description: 'Pulsa & paket data Indosat' },
-        { name: 'XL Axiata', description: 'Pulsa & paket data XL' },
-        { name: 'Tri (3)', description: 'Pulsa & paket data Tri' },
-        { name: 'Smartfren', description: 'Pulsa & paket data Smartfren' }
+        { name: 'Telkomsel', description: 'Pulsa & paket data Telkomsel', popular: true, path: '/topup/telkomsel/pulsa' },
+        { name: 'Indosat Ooredoo', description: 'Pulsa & paket data Indosat', path: '/topup/indosat/pulsa' },
+        { name: 'XL Axiata', description: 'Pulsa & paket data XL', path: '/topup/xl/pulsa' },
+        { name: 'Tri (3)', description: 'Pulsa & paket data Tri', path: '/topup/tri/pulsa' },
+        { name: 'Smartfren', description: 'Pulsa & paket data Smartfren', path: '/topup/smartfren/pulsa' }
       ]
     },
     {
@@ -51,11 +52,11 @@ const Services = () => {
       icon: CardIcon,
       color: 'bg-blue-500',
       services: [
-        { name: 'GoPay', description: 'Top up saldo GoPay', popular: true },
-        { name: 'OVO', description: 'Top up saldo OVO' },
-        { name: 'DANA', description: 'Top up saldo DANA' },
-        { name: 'LinkAja', description: 'Top up saldo LinkAja' },
-        { name: 'ShopeePay', description: 'Top up saldo ShopeePay' }
+        { name: 'GoPay', description: 'Top up saldo GoPay', popular: true, path: '/ewallet/gopay' },
+        { name: 'OVO', description: 'Top up saldo OVO', path: '/ewallet/ovo' },
+        { name: 'DANA', description: 'Top up saldo DANA', path: '/ewallet/dana' },
+        { name: 'LinkAja', description: 'Top up saldo LinkAja', path: '/ewallet/linkaja' },
+        { name: 'ShopeePay', description: 'Top up saldo ShopeePay', path: '/ewallet/shopeepay' }
       ]
     },
     {
@@ -63,10 +64,10 @@ const Services = () => {
       icon: Settings,
       color: 'bg-red-500',
       services: [
-        { name: 'BPJS Kesehatan', description: 'Bayar iuran BPJS Kesehatan', popular: true },
-        { name: 'BPJS Ketenagakerjaan', description: 'Bayar iuran BPJS TK' },
-        { name: 'Asuransi Prudential', description: 'Bayar premi asuransi' },
-        { name: 'Asuransi AXA', description: 'Bayar premi AXA' }
+        { name: 'BPJS Kesehatan', description: 'Bayar iuran BPJS Kesehatan', popular: true, path: '/insurance/bpjs-kesehatan' },
+        { name: 'BPJS Ketenagakerjaan', description: 'Bayar iuran BPJS TK', path: '/insurance/bpjs-ketenagakerjaan' },
+        { name: 'Asuransi Prudential', description: 'Bayar premi asuransi', path: '/insurance/prudential' },
+        { name: 'Asuransi AXA', description: 'Bayar premi AXA', path: '/insurance/axa' }
       ]
     },
     {
@@ -74,11 +75,11 @@ const Services = () => {
       icon: Gamepad2,
       color: 'bg-indigo-500',
       services: [
-        { name: 'Mobile Legends', description: 'Diamond ML & battle pass', popular: true },
-        { name: 'Free Fire', description: 'Diamond FF & membership' },
-        { name: 'PUBG Mobile', description: 'UC PUBG & Royal Pass' },
-        { name: 'Steam Wallet', description: 'Top up Steam Wallet' },
-        { name: 'Google Play', description: 'Voucher Google Play' }
+        { name: 'Mobile Legends', description: 'Diamond ML & battle pass', popular: true, path: '/gaming/mobile-legends' },
+        { name: 'Free Fire', description: 'Diamond FF & membership', path: '/gaming/free-fire' },
+        { name: 'PUBG Mobile', description: 'UC PUBG & Royal Pass', path: '/gaming/pubg-mobile' },
+        { name: 'Steam Wallet', description: 'Top up Steam Wallet', path: '/gaming/steam-wallet' },
+        { name: 'Google Play', description: 'Voucher Google Play', path: '/gaming/google-play' }
       ]
     }
   ];
@@ -125,13 +126,14 @@ const Services = () => {
             
             <div className="space-y-2">
               {category.services.map((service, serviceIndex) => (
-                <button
+                <Link
                   key={serviceIndex}
-                  className="w-full text-left p-3 rounded-lg border border-gray-100 hover:border-blue-200 hover:bg-blue-50 transition-all active:scale-95"
+                  to={service.path}
+                  className="w-full text-left p-3 rounded-lg border border-gray-100 hover:border-blue-200 hover:bg-blue-50 transition-all active:scale-95 block"
                 >
                   <div className="flex justify-between items-center">
                     <div className="flex-1">
-                      <h4 className="font-medium text-gray-800 text-sm">
+                      <h4 className="font-medium text-gray-800 text-sm hover:text-blue-600">
                         {service.name}
                       </h4>
                       <p className="text-gray-500 text-xs">{service.description}</p>
@@ -142,7 +144,7 @@ const Services = () => {
                       </span>
                     )}
                   </div>
-                </button>
+                </Link>
               ))}
             </div>
           </div>
