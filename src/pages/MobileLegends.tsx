@@ -4,12 +4,18 @@ import { ArrowLeft, Gamepad2, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import BottomNavigation from '../components/BottomNavigation';
 
+interface Product {
+  name: string;
+  price: string;
+  discount: string | null;
+}
+
 const MobileLegends = () => {
   const [userID, setUserID] = useState('');
   const [zoneID, setZoneID] = useState('');
-  const [selectedProduct, setSelectedProduct] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  const products = [
+  const products: Product[] = [
     { name: '86 Diamonds', price: 'Rp 20.000', discount: null },
     { name: '172 Diamonds', price: 'Rp 40.000', discount: '5%' },
     { name: '257 Diamonds', price: 'Rp 60.000', discount: null },
