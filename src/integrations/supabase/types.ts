@@ -9,13 +9,268 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      balance_history: {
+        Row: {
+          amount: number
+          balance_after: number
+          balance_before: number
+          created_at: string | null
+          description: string | null
+          id: string
+          transaction_id: string | null
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          balance_after: number
+          balance_before: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          transaction_id?: string | null
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          balance_before?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          transaction_id?: string | null
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "balance_history_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "balance_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          brand: string
+          buyer_price: number
+          buyer_sku_code: string | null
+          category: string
+          created_at: string | null
+          description: string | null
+          end_cut_off: string | null
+          id: string
+          is_active: boolean | null
+          product_name: string
+          seller_price: number
+          sku: string
+          start_cut_off: string | null
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          brand: string
+          buyer_price: number
+          buyer_sku_code?: string | null
+          category: string
+          created_at?: string | null
+          description?: string | null
+          end_cut_off?: string | null
+          id?: string
+          is_active?: boolean | null
+          product_name: string
+          seller_price: number
+          sku: string
+          start_cut_off?: string | null
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          brand?: string
+          buyer_price?: number
+          buyer_sku_code?: string | null
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          end_cut_off?: string | null
+          id?: string
+          is_active?: boolean | null
+          product_name?: string
+          seller_price?: number
+          sku?: string
+          start_cut_off?: string | null
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          balance: number | null
+          created_at: string | null
+          email: string
+          full_name: string | null
+          id: string
+          is_active: boolean | null
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          balance?: number | null
+          created_at?: string | null
+          email: string
+          full_name?: string | null
+          id: string
+          is_active?: boolean | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          balance?: number | null
+          created_at?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      topup_requests: {
+        Row: {
+          admin_notes: string | null
+          amount: number
+          created_at: string | null
+          id: string
+          payment_method: string
+          proof_image: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount: number
+          created_at?: string | null
+          id?: string
+          payment_method: string
+          proof_image?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          amount?: number
+          created_at?: string | null
+          id?: string
+          payment_method?: string
+          proof_image?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "topup_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transactions: {
+        Row: {
+          balance_after: number | null
+          balance_before: number | null
+          created_at: string | null
+          customer_id: string
+          digiflazz_trx_id: string | null
+          id: string
+          message: string | null
+          price: number
+          product_name: string
+          rc: string | null
+          ref_id: string
+          serial_number: string | null
+          sku: string
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          balance_after?: number | null
+          balance_before?: number | null
+          created_at?: string | null
+          customer_id: string
+          digiflazz_trx_id?: string | null
+          id?: string
+          message?: string | null
+          price: number
+          product_name: string
+          rc?: string | null
+          ref_id: string
+          serial_number?: string | null
+          sku: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          balance_after?: number | null
+          balance_before?: number | null
+          created_at?: string | null
+          customer_id?: string
+          digiflazz_trx_id?: string | null
+          id?: string
+          message?: string | null
+          price?: number
+          product_name?: string
+          rc?: string | null
+          ref_id?: string
+          serial_number?: string | null
+          sku?: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      update_user_balance: {
+        Args: {
+          p_user_id: string
+          p_amount: number
+          p_type: string
+          p_description?: string
+          p_transaction_id?: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
