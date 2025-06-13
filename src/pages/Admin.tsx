@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdminStats, useAdminTransactions, useAdminTopupRequests, useUpdateTopupRequest, useSyncProducts } from '@/hooks/useAdmin';
@@ -12,7 +11,7 @@ import {
   CreditCard, 
   TrendingUp, 
   DollarSign,
-  Sync,
+  RefreshCw,
   CheckCircle,
   XCircle,
   Clock
@@ -74,7 +73,7 @@ export default function Admin() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-800">Admin Dashboard</h1>
           <Button onClick={handleSyncProducts} disabled={syncProducts.isPending}>
-            <Sync className={`w-4 h-4 mr-2 ${syncProducts.isPending ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 mr-2 ${syncProducts.isPending ? 'animate-spin' : ''}`} />
             Sync Products
           </Button>
         </div>
