@@ -27,18 +27,6 @@ export default function Admin() {
   const syncProducts = useSyncProducts();
   const { toast } = useToast();
 
-  // Check if user is admin (you should implement proper role checking)
-  if (!user || profile?.email !== 'admin@example.com') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Access Denied</h1>
-          <p className="text-gray-600">You don't have permission to access this page.</p>
-        </div>
-      </div>
-    );
-  }
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
