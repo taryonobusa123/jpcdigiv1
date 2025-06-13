@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useProducts } from '@/hooks/useProducts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,9 +15,9 @@ import { useNavigate } from 'react-router-dom';
 export default function TestPurchase() {
   const [selectedProduct, setSelectedProduct] = useState<string>('');
   const [customerId, setCustomerId] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   
-  const { data: products, isLoading: productsLoading } = useProducts(selectedCategory || undefined);
+  const { data: products, isLoading: productsLoading } = useProducts(selectedCategory === 'all' ? undefined : selectedCategory);
   const { data: transactions, isLoading: transactionsLoading } = useDigiflazzTransactions();
   const testPurchase = useTestPurchase();
   const { toast } = useToast();
@@ -118,7 +117,7 @@ export default function TestPurchase() {
                     <SelectValue placeholder="Select category (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Categories</SelectItem>
+                    <SelectItem value="all">All Categories</SelectItem>
                     {categories.map((category) => (
                       <SelectItem key={category.value} value={category.value}>
                         {category.label}
@@ -136,7 +135,7 @@ export default function TestPurchase() {
                   </SelectTrigger>
                   <SelectContent>
                     {productsLoading ? (
-                      <SelectItem value="" disabled>Loading...</SelectItem>
+                      <SelectItem value="loading" disabled>Loading...</SelectItem>
                     ) : (
                       products?.map((product) => (
                         <SelectItem key={product.sku} value={product.sku}>
