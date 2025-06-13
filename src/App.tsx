@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/toaster';
 import Index from '@/pages/Index';
 import ProductList from '@/pages/ProductList';
 import Admin from '@/pages/Admin';
+import TestPurchase from '@/pages/TestPurchase';
 
 const queryClient = new QueryClient();
 
@@ -18,6 +19,7 @@ function App() {
             <Route path="/" element={<Index />} />
             <Route path="/products" element={<ProductList />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/test-purchase" element={<TestPurchase />} />
           </Routes>
           <Toaster />
         </Router>

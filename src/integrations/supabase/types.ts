@@ -256,6 +256,57 @@ export type Database = {
           },
         ]
       }
+      transaksi_digiflazz: {
+        Row: {
+          buyer_last_saldo: string
+          buyer_sku_code: string
+          customer_no: string
+          id: number
+          message: string
+          price: number
+          rc: string
+          ref_id: string
+          ref_id_digiflazz: string | null
+          sn: string
+          status: string
+          tele: string
+          updated_at: string | null
+          wa: string
+        }
+        Insert: {
+          buyer_last_saldo: string
+          buyer_sku_code: string
+          customer_no: string
+          id?: never
+          message: string
+          price: number
+          rc: string
+          ref_id: string
+          ref_id_digiflazz?: string | null
+          sn: string
+          status: string
+          tele: string
+          updated_at?: string | null
+          wa: string
+        }
+        Update: {
+          buyer_last_saldo?: string
+          buyer_sku_code?: string
+          customer_no?: string
+          id?: never
+          message?: string
+          price?: number
+          rc?: string
+          ref_id?: string
+          ref_id_digiflazz?: string | null
+          sn?: string
+          status?: string
+          tele?: string
+          updated_at?: string | null
+          wa?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

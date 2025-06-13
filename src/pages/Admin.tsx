@@ -1,6 +1,8 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdminStats, useAdminTransactions, useAdminTopupRequests, useUpdateTopupRequest, useSyncProducts } from '@/hooks/useAdmin';
+import { useProducts } from '@/hooks/useProducts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,18 +16,23 @@ import {
   RefreshCw,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  Package,
+  ShoppingCart
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 export default function Admin() {
   const { user, profile } = useAuth();
   const { data: stats, isLoading: statsLoading } = useAdminStats();
   const { data: transactions, isLoading: transactionsLoading } = useAdminTransactions();
   const { data: topupRequests, isLoading: topupLoading } = useAdminTopupRequests();
+  const { data: products, isLoading: productsLoading } = useProducts();
   const updateTopupRequest = useUpdateTopupRequest();
   const syncProducts = useSyncProducts();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -55,15 +62,25 @@ export default function Admin() {
     }
   };
 
+  const handleTestPurchase = () => {
+    navigate('/test-purchase');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-800">Admin Dashboard</h1>
-          <Button onClick={handleSyncProducts} disabled={syncProducts.isPending}>
-            <RefreshCw className={`w-4 h-4 mr-2 ${syncProducts.isPending ? 'animate-spin' : ''}`} />
-            Sync Products
-          </Button>
+          <div className="flex space-x-2">
+            <Button onClick={handleTestPurchase} variant="outline">
+              <ShoppingCart className="w-4 h-4 mr-2" />
+              Test Purchase
+            </Button>
+            <Button onClick={handleSyncProducts} disabled={syncProducts.isPending}>
+              <RefreshCw className={`w-4 h-4 mr-2 ${syncProducts.isPending ? 'animate-spin' : ''}`} />
+              Sync Products
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -121,6 +138,7 @@ export default function Admin() {
           <TabsList>
             <TabsTrigger value="transactions">Transactions</TabsTrigger>
             <TabsTrigger value="topup-requests">Top Up Requests</TabsTrigger>
+            <TabsTrigger value="products">Products</TabsTrigger>
           </TabsList>
 
           <TabsContent value="transactions">
@@ -235,6 +253,52 @@ export default function Admin() {
                                 </Button>
                               </div>
                             )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="products">
+            <Card>
+              <CardHeader>
+                <CardTitle>Available Products</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {productsLoading ? (
+                  <div className="text-center py-4">Loading...</div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>SKU</TableHead>
+                        <TableHead>Product Name</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Brand</TableHead>
+                        <TableHead>Seller Price</TableHead>
+                        <TableHead>Buyer Price</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {products?.slice(0, 50).map((product) => (
+                        <TableRow key={product.id}>
+                          <TableCell className="font-mono text-xs">{product.sku}</TableCell>
+                          <TableCell>{product.product_name}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{product.category}</Badge>
+                          </TableCell>
+                          <TableCell>{product.brand}</TableCell>
+                          <TableCell>{formatCurrency(product.seller_price)}</TableCell>
+                          <TableCell>{formatCurrency(product.buyer_price)}</TableCell>
+                          <TableCell>
+                            <Badge variant={product.is_active ? 'default' : 'secondary'}>
+                              {product.is_active ? 'Active' : 'Inactive'}
+                            </Badge>
                           </TableCell>
                         </TableRow>
                       ))}
