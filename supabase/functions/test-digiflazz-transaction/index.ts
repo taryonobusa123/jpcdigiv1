@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { crypto } from "https://deno.land/std@0.168.0/crypto/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -86,8 +87,8 @@ async function callDigiflazzAPI(params: any) {
     throw new Error('Digiflazz credentials not configured');
   }
 
-  // Generate signature
-  const sign = await generateSignature(username, apiKey, params.ref_id);
+  // Generate signature using MD5
+  const sign = await generateMD5Signature(username, apiKey, params.ref_id);
   
   const payload = {
     username,
@@ -118,13 +119,14 @@ async function callDigiflazzAPI(params: any) {
   }
 }
 
-// Generate MD5 signature for Digiflazz
-async function generateSignature(username: string, apiKey: string, refId: string): Promise<string> {
+// Generate MD5 signature for Digiflazz using crypto-js library
+async function generateMD5Signature(username: string, apiKey: string, refId: string): Promise<string> {
   const text = username + apiKey + refId;
-  const encoder = new TextEncoder();
-  const data = encoder.encode(text);
-  const hashBuffer = await crypto.subtle.digest('MD5', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex;
+  
+  // Use external crypto library for MD5 since Deno doesn't support it natively
+  const cryptoJs = await import('https://esm.sh/crypto-js@4.1.1');
+  const hash = cryptoJs.MD5(text).toString();
+  
+  console.log('Generated MD5 signature for:', text, '-> Hash:', hash);
+  return hash;
 }
