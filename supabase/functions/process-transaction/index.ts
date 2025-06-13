@@ -8,7 +8,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -61,21 +60,24 @@ serve(async (req) => {
       throw new Error('Failed to deduct balance');
     }
 
-    // Call Digiflazz API (in production, replace with actual API call)
+    // Call Digiflazz API
     const digiflazzResponse = await callDigiflazzAPI({
       customer_id: transaction.customer_id,
       sku: transaction.sku,
       ref_id: transaction.ref_id,
     });
 
+    console.log('Digiflazz API Response:', digiflazzResponse);
+
     // Update transaction with Digiflazz response
     const { error: updateError } = await supabaseClient
       .from('transactions')
       .update({
-        status: digiflazzResponse.status || 'pending',
-        message: digiflazzResponse.message,
-        digiflazz_trx_id: digiflazzResponse.trx_id,
-        rc: digiflazzResponse.rc,
+        status: digiflazzResponse.data?.status || 'pending',
+        message: digiflazzResponse.data?.message,
+        digiflazz_trx_id: digiflazzResponse.data?.trx_id,
+        rc: digiflazzResponse.data?.rc,
+        serial_number: digiflazzResponse.data?.sn,
         updated_at: new Date().toISOString(),
       })
       .eq('id', transaction_id);
@@ -86,7 +88,7 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ 
       success: true, 
-      transaction: digiflazzResponse 
+      transaction: digiflazzResponse.data 
     }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -103,21 +105,54 @@ serve(async (req) => {
   }
 });
 
-// Mock Digiflazz API call (replace with actual implementation)
+// Real Digiflazz API call
 async function callDigiflazzAPI(params: any) {
-  // In production, implement actual Digiflazz API call here
-  // For now, return mock success response
+  const username = Deno.env.get('DIGIFLAZZ_USERNAME');
+  const apiKey = Deno.env.get('DIGIFLAZZ_API_KEY');
   
-  console.log('Mock Digiflazz API call:', params);
+  if (!username || !apiKey) {
+    throw new Error('Digiflazz credentials not configured');
+  }
+
+  // Generate signature
+  const sign = await generateSignature(username, apiKey, params.ref_id);
   
-  // Simulate API processing time
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  return {
-    status: 'Sukses',
-    message: 'Transaksi berhasil diproses',
-    trx_id: `DGF${Date.now()}`,
-    rc: '00',
-    sn: Math.random().toString(36).substring(2, 15).toUpperCase(),
+  const payload = {
+    username,
+    buyer_sku_code: params.sku,
+    customer_no: params.customer_id,
+    ref_id: params.ref_id,
+    sign,
   };
+
+  console.log('Calling Digiflazz API with payload:', payload);
+
+  try {
+    const response = await fetch('https://api.digiflazz.com/v1/transaction', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await response.json();
+    console.log('Digiflazz API raw response:', result);
+    
+    return result;
+  } catch (error) {
+    console.error('Digiflazz API call failed:', error);
+    throw error;
+  }
+}
+
+// Generate MD5 signature for Digiflazz
+async function generateSignature(username: string, apiKey: string, refId: string): Promise<string> {
+  const text = username + apiKey + refId;
+  const encoder = new TextEncoder();
+  const data = encoder.encode(text);
+  const hashBuffer = await crypto.subtle.digest('MD5', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
 }

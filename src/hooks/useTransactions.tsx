@@ -57,6 +57,18 @@ export function useCreateTransaction() {
         .single();
 
       if (error) throw error;
+
+      // Process transaction via edge function
+      const { error: processError } = await supabase.functions.invoke('process-transaction', {
+        body: { transaction_id: data.id }
+      });
+
+      if (processError) {
+        console.error('Transaction processing error:', processError);
+        // Transaction was created but processing failed
+        // The transaction will remain in pending status
+      }
+
       return data;
     },
     onSuccess: () => {
@@ -64,7 +76,7 @@ export function useCreateTransaction() {
       refreshProfile();
       toast({
         title: "Berhasil",
-        description: "Transaksi berhasil dibuat",
+        description: "Transaksi sedang diproses",
       });
     },
     onError: (error) => {
