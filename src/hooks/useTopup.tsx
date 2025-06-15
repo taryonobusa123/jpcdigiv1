@@ -17,11 +17,15 @@ export function useCreateTopupRequest() {
     }) => {
       if (!user) throw new Error('Not authenticated');
 
+      // Generate random 3-digit number for identification
+      const randomId = Math.floor(100 + Math.random() * 900);
+      const finalAmount = data.amount + randomId;
+
       const { data: result, error } = await supabase
         .from('topup_requests')
         .insert({
           user_id: user.id,
-          amount: data.amount,
+          amount: finalAmount,
           payment_method: data.payment_method,
           proof_image: data.proof_image,
           status: 'pending',
@@ -30,13 +34,17 @@ export function useCreateTopupRequest() {
         .single();
 
       if (error) throw error;
-      return result;
+      return { ...result, randomId, originalAmount: data.amount };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['topup-requests'] });
       toast({
         title: "Berhasil",
-        description: "Permintaan top up berhasil dikirim. Menunggu konfirmasi admin.",
+        description: `Permintaan top up berhasil dikirim. Transfer sebesar ${new Intl.NumberFormat('id-ID', {
+          style: 'currency',
+          currency: 'IDR',
+          minimumFractionDigits: 0,
+        }).format(result.amount)} (termasuk kode unik +${result.randomId}). Menunggu konfirmasi admin.`,
       });
     },
     onError: (error) => {

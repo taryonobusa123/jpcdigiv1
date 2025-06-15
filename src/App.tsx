@@ -23,6 +23,7 @@ import PulsaPurchase from "@/pages/PulsaPurchase";
 import WhatsAppVerificationPage from "@/pages/WhatsAppVerification";
 import TopUp from "@/pages/TopUp";
 import TopupSaldo from "@/pages/TopupSaldo";
+import TopupHistory from "@/pages/TopupHistory";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,7 @@ const App = () => (
             <Route path="/pulsa" element={<PulsaPurchase />} />
             <Route path="/topup" element={<TopUp />} />
             <Route path="/topup-saldo" element={<TopupSaldo />} />
+            <Route path="/topup-history" element={<TopupHistory />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
