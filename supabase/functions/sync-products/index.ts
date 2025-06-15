@@ -30,22 +30,33 @@ serve(async (req) => {
 
     console.log(`Received ${products.length} products from Digiflazz`);
 
+    // Filter products to only include relevant categories
+    const relevantCategories = ['Pulsa', 'Data', 'PLN', 'E-Money', 'Games', 'Voucher'];
+    const filteredProducts = products.filter(product => 
+      relevantCategories.includes(product.category) && 
+      product.buyer_product_status && 
+      product.seller_product_status
+    );
+
+    console.log(`Filtered to ${filteredProducts.length} relevant active products`);
+
     // Process products in batches
     const batchSize = 50;
     let syncedCount = 0;
     let errorCount = 0;
     
-    for (let i = 0; i < products.length; i += batchSize) {
-      const batch = products.slice(i, i + batchSize);
-      console.log(`Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(products.length/batchSize)}`);
+    for (let i = 0; i < filteredProducts.length; i += batchSize) {
+      const batch = filteredProducts.slice(i, i + batchSize);
+      console.log(`Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(filteredProducts.length/batchSize)}`);
       
       for (const product of batch) {
         try {
-          // Only sync active products
-          if (!product.buyer_product_status || !product.seller_product_status) {
-            console.log(`Skipping inactive product: ${product.buyer_sku_code}`);
-            continue;
-          }
+          // Map category to our system
+          const mappedCategory = mapCategory(product.category);
+          
+          // Calculate buyer price with appropriate margin based on category
+          const margin = getMarginByCategory(product.category);
+          const buyerPrice = parseFloat(product.price.toString()) + margin;
 
           // Upsert product
           const { error } = await supabaseClient
@@ -53,11 +64,11 @@ serve(async (req) => {
             .upsert({
               sku: product.buyer_sku_code,
               product_name: product.product_name,
-              category: mapCategory(product.category),
-              brand: product.brand || 'Unknown',
+              category: mappedCategory,
+              brand: normalizeBrand(product.brand || 'Unknown'),
               type: product.type || 'General',
               seller_price: parseFloat(product.price.toString()),
-              buyer_price: parseFloat(product.price.toString()) + 500, // Add margin
+              buyer_price: buyerPrice,
               buyer_sku_code: product.buyer_sku_code,
               start_cut_off: product.start_cut_off || '00:00',
               end_cut_off: product.end_cut_off || '23:59',
@@ -72,6 +83,7 @@ serve(async (req) => {
             errorCount++;
           } else {
             syncedCount++;
+            console.log(`Synced: ${product.product_name} (${product.buyer_sku_code})`);
           }
         } catch (err) {
           console.error('Error processing product:', product.buyer_sku_code, err);
@@ -86,7 +98,8 @@ serve(async (req) => {
       success: true,
       synced_count: syncedCount,
       error_count: errorCount,
-      total_products: products.length
+      total_products: filteredProducts.length,
+      total_received: products.length
     }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -140,20 +153,21 @@ async function getDigiflazzProducts() {
     console.log('Digiflazz API response status:', result.success ? 'success' : 'failed');
     
     if (!result.success) {
+      console.error('Digiflazz API error details:', result);
       throw new Error(result.message || 'Failed to fetch products from Digiflazz');
     }
     
     return result.data;
   } catch (error) {
     console.error('Error calling Digiflazz API:', error);
-    throw new Error('Failed to connect to Digiflazz API');
+    throw new Error(`Failed to connect to Digiflazz API: ${error.message}`);
   }
 }
 
 function mapCategory(category: string): string {
   const categoryMap: { [key: string]: string } = {
     'Pulsa': 'pulsa',
-    'Data': 'data',
+    'Data': 'data', 
     'PLN': 'electricity',
     'PDAM': 'water',
     'E-Money': 'emoney',
@@ -164,6 +178,33 @@ function mapCategory(category: string): string {
   };
   
   return categoryMap[category] || category.toLowerCase().replace(/\s+/g, '_');
+}
+
+function normalizeBrand(brand: string): string {
+  const brandMap: { [key: string]: string } = {
+    'TELKOMSEL': 'telkomsel',
+    'INDOSAT': 'indosat', 
+    'XL AXIATA': 'xl',
+    'TRI': 'tri',
+    'SMARTFREN': 'smartfren',
+    'AXIS': 'axis',
+    'PLN': 'pln',
+  };
+  
+  return brandMap[brand.toUpperCase()] || brand.toLowerCase();
+}
+
+function getMarginByCategory(category: string): number {
+  const marginMap: { [key: string]: number } = {
+    'Pulsa': 500,
+    'Data': 1000,
+    'PLN': 500,
+    'E-Money': 300,
+    'Games': 1000,
+    'Voucher': 500,
+  };
+  
+  return marginMap[category] || 500;
 }
 
 async function generateSignature(username: string, apiKey: string, cmd: string): Promise<string> {
