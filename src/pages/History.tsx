@@ -1,116 +1,46 @@
 
-import React, { useState } from 'react';
-import { 
-  Calendar, Filter, Search, CheckCircle, Clock, XCircle, 
-  ArrowUpRight, ArrowDownLeft, Zap, Smartphone, Wifi, DollarSign
-} from 'lucide-react';
-import BottomNavigation from '../components/BottomNavigation';
-import { useTransactions } from '@/hooks/useTransactions';
-import { useAuth } from '@/hooks/useAuth';
+import React from "react";
+import { useTransactions } from "@/hooks/useTransactions";
+import { useAuth } from "@/hooks/useAuth";
+import { CheckCircle, Clock, XCircle } from "lucide-react";
+import BottomNavigation from "../components/BottomNavigation";
+
+const StatusBadge = ({ status }: { status: string }) => {
+  const colors = {
+    success: "bg-green-100 text-green-600",
+    pending: "bg-yellow-100 text-yellow-600",
+    failed: "bg-red-100 text-red-600",
+  };
+  const icons = {
+    success: <CheckCircle className="w-4 h-4 inline mr-1" />,
+    pending: <Clock className="w-4 h-4 inline mr-1" />,
+    failed: <XCircle className="w-4 h-4 inline mr-1" />,
+  };
+  const color = colors[status as keyof typeof colors] || "bg-gray-100 text-gray-500";
+  const icon = icons[status as keyof typeof icons] || <Clock className="w-4 h-4 inline mr-1" />;
+  let text = "Tidak Diketahui";
+  if (status === "success") text = "Berhasil";
+  else if (status === "pending") text = "Pending";
+  else if (status === "failed") text = "Gagal";
+  else if (status) text = status;
+  return (
+    <span className={`px-2 py-1 rounded-full text-xs font-semibold flex items-center ${color}`}>
+      {icon}
+      {text}
+    </span>
+  );
+};
 
 const History = () => {
-  const [activeTab, setActiveTab] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
   const { user } = useAuth();
-  const { data: transactions = [], isLoading, error } = useTransactions();
+  const { data: transactions, isLoading, error } = useTransactions();
 
-  // Log transactions for debug purposes
-  console.log('Transaksi dari useTransactions:', transactions);
-
-  const tabs = [
-    { id: 'all', label: 'Semua' },
-    { id: 'success', label: 'Berhasil' },
-    { id: 'pending', label: 'Pending' },
-    { id: 'failed', label: 'Gagal' }
-  ];
-
-  const getTransactionIcon = (category: string, type: string) => {
-    if (category === 'pulsa') return Smartphone;
-    if ((type || '').toLowerCase().includes('pln') || (type || '').toLowerCase().includes('listrik')) return Zap;
-    if ((type || '').toLowerCase().includes('internet') || (type || '').toLowerCase().includes('wifi')) return Wifi;
-    if ((type || '').toLowerCase().includes('transfer')) return ArrowUpRight;
-    if ((type || '').toLowerCase().includes('topup') || (type || '').toLowerCase().includes('saldo')) return ArrowDownLeft;
-    return DollarSign;
-  };
-
-  const getIconColor = (category: string, type: string) => {
-    if (category === 'pulsa') return { color: 'text-blue-600', bg: 'bg-blue-100' };
-    if ((type || '').toLowerCase().includes('pln') || (type || '').toLowerCase().includes('listrik')) return { color: 'text-yellow-600', bg: 'bg-yellow-100' };
-    if ((type || '').toLowerCase().includes('internet') || (type || '').toLowerCase().includes('wifi')) return { color: 'text-purple-600', bg: 'bg-purple-100' };
-    if ((type || '').toLowerCase().includes('transfer')) return { color: 'text-red-600', bg: 'bg-red-100' };
-    if ((type || '').toLowerCase().includes('topup') || (type || '').toLowerCase().includes('saldo')) return { color: 'text-green-600', bg: 'bg-green-100' };
-    return { color: 'text-gray-600', bg: 'bg-gray-100' };
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'success':
-        return <CheckCircle className="w-4 h-4 text-green-600" />;
-      case 'pending':
-        return <Clock className="w-4 h-4 text-yellow-600" />;
-      case 'failed':
-        return <XCircle className="w-4 h-4 text-red-600" />;
-      default:
-        return <Clock className="w-4 h-4 text-yellow-600" />;
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'success':
-        return 'Berhasil';
-      case 'pending':
-        return 'Pending';
-      case 'failed':
-        return 'Gagal';
-      default:
-        return status ? status : 'Status Tidak Dikenal';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'success':
-        return 'text-green-600';
-      case 'pending':
-        return 'text-yellow-600';
-      case 'failed':
-        return 'text-red-600';
-      default:
-        return 'text-yellow-600';
-    }
-  };
-
-  // Filter yang tahan jika ada tipe/desc undefined
-  const filteredTransactions = transactions.filter(transaction => {
-    // Tampilkan semua status pada tab 'all'
-    const matchesTab =
-      activeTab === 'all'
-        ? true
-        : transaction.status === activeTab;
-
-    const typeStr = (transaction.type || '').toLowerCase();
-    const descStr = (transaction.description || '').toLowerCase();
-
-    const matchesSearch =
-      typeStr.includes(searchQuery.toLowerCase()) ||
-      descStr.includes(searchQuery.toLowerCase());
-    return matchesTab && matchesSearch;
-  });
-
-  // Show login prompt if user is not authenticated
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 pb-20">
-        <div className="bg-white border-b border-gray-200 p-4">
-          <h1 className="text-xl font-bold text-gray-800">Riwayat Transaksi</h1>
-        </div>
-        <div className="flex flex-col items-center justify-center p-8 text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-            <Search className="w-8 h-8 text-gray-400" />
-          </div>
-          <h3 className="text-lg font-medium text-gray-800 mb-2">Login Diperlukan</h3>
-          <p className="text-gray-500">Silakan login untuk melihat riwayat transaksi Anda</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 pb-20">
+        <div className="bg-white rounded-xl shadow p-6 mb-4 text-center">
+          <h2 className="text-xl font-bold">Login Diperlukan</h2>
+          <p className="text-gray-600">Silakan login untuk melihat riwayat transaksi Anda.</p>
         </div>
         <BottomNavigation />
       </div>
@@ -119,132 +49,55 @@ const History = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 p-4 sticky top-0 z-40">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl font-bold text-gray-800">Riwayat Transaksi</h1>
-          <div className="flex space-x-2">
-            <button className="p-2 bg-gray-100 rounded-lg">
-              <Calendar className="w-5 h-5 text-gray-600" />
-            </button>
-            <button className="p-2 bg-gray-100 rounded-lg">
-              <Filter className="w-5 h-5 text-gray-600" />
-            </button>
-          </div>
-        </div>
-        
-        {/* Search Bar */}
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Cari transaksi..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-gray-100 rounded-lg text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        {/* Tabs */}
-        <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${
-                activeTab === tab.id
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      <div className="bg-white sticky top-0 z-40 border-b border-gray-200 p-4">
+        <h1 className="text-xl font-bold">Riwayat Transaksi</h1>
       </div>
-
-      {/* Transaction List */}
-      <div className="p-4">
+      <div className="px-2 mt-4">
         {isLoading ? (
-          <div className="flex justify-center items-center py-12">
+          <div className="flex justify-center items-center py-20">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
         ) : error ? (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <XCircle className="w-8 h-8 text-red-400" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-800 mb-2">Terjadi Kesalahan</h3>
-            <p className="text-gray-500">Gagal memuat riwayat transaksi</p>
+          <div className="flex flex-col items-center text-center py-20">
+            <XCircle className="w-10 h-10 text-red-400 mb-2" />
+            <p className="text-red-500">Gagal memuat riwayat transaksi.</p>
           </div>
-        ) : filteredTransactions.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Search className="w-8 h-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-800 mb-2">
-              {transactions.length === 0 
-                ? 'Belum ada transaksi' 
-                : 'Tidak ada transaksi'}
-            </h3>
-            <p className="text-gray-500">
-              {transactions.length === 0 
-                ? 'Mulai bertransaksi untuk melihat riwayat di sini'
-                : 'Coba ubah filter atau kata kunci pencarian'}
-            </p>
-            <div className="text-xs text-gray-400 mt-3">
-              <span>Total transaksi: {transactions.length}</span>
-            </div>
+        ) : !transactions || transactions.length === 0 ? (
+          <div className="flex flex-col items-center text-center py-20">
+            <Clock className="w-10 h-10 text-gray-300 mb-2" />
+            <p className="text-gray-600">Belum ada transaksi.</p>
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredTransactions.map((transaction) => {
-              const IconComponent = getTransactionIcon(transaction.category, transaction.type);
-              const iconColors = getIconColor(transaction.category, transaction.type);
-              
-              return (
-                <div key={transaction.id} className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
-                  <div className="flex items-center space-x-3">
-                    <div className={`p-2.5 rounded-lg ${iconColors.bg}`}>
-                      <IconComponent className={`w-5 h-5 ${iconColors.color}`} />
-                    </div>
-                    
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="font-semibold text-gray-800 text-sm">{transaction.type || '-'}</h4>
-                        <span className="font-bold text-sm text-gray-800">
-                          {transaction.amount || '-'}
-                        </span>
-                      </div>
-                      
-                      <p className="text-gray-500 text-xs mb-2">{transaction.description || '-'}</p>
-                      
-                      {transaction.ref_id && (
-                        <p className="text-gray-400 text-xs mb-1">ID: {transaction.ref_id}</p>
-                      )}
-                      
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400 text-xs">
-                          {transaction.date} • {transaction.time}
-                        </span>
-                        <div className={`flex items-center space-x-1 ${getStatusColor(transaction.status)}`}>
-                          {getStatusIcon(transaction.status)}
-                          <span className="text-xs font-medium">{getStatusText(transaction.status)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+            {transactions.map((tx: any) => (
+              <div
+                key={tx.id}
+                className="bg-white rounded-xl shadow-sm px-4 py-2 border border-gray-100 flex flex-col gap-1"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-sm text-gray-800">{tx.type || "-"}</span>
+                  <span className="font-bold text-sm text-gray-800">{tx.amount}</span>
                 </div>
-              );
-            })}
+                <div className="text-xs text-gray-500">
+                  {tx.description || "-"}
+                </div>
+                {tx.ref_id && (
+                  <div className="text-xs text-gray-400">ID: {tx.ref_id}</div>
+                )}
+                <div className="flex items-center justify-between pt-2">
+                  <span className="text-xs text-gray-400">
+                    {tx.date} {tx.time}
+                  </span>
+                  <StatusBadge status={tx.status} />
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
-
       <BottomNavigation />
     </div>
   );
 };
 
 export default History;
-
