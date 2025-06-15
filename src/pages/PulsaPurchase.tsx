@@ -30,7 +30,7 @@ const PulsaPurchase = () => {
     if (phoneNumber.length >= 4) {
       const prefix = phoneNumber.substring(0, 4);
       
-      // Updated operator detection to match the database operator names
+      // Updated operator detection to match the brand names in products table
       if (['0811', '0812', '0813', '0821', '0822', '0851', '0852', '0853'].includes(prefix)) {
         setDetectedOperator('TELKOMSEL');
       } else if (['0814', '0815', '0816', '0855', '0856', '0857', '0858'].includes(prefix)) {
@@ -40,7 +40,7 @@ const PulsaPurchase = () => {
       } else if (['0838', '0831', '0832', '0833'].includes(prefix)) {
         setDetectedOperator('AXIS');
       } else if (['0895', '0896', '0897', '0898', '0899'].includes(prefix)) {
-        setDetectedOperator('THREE');
+        setDetectedOperator('TRI');
       } else if (['0881', '0882', '0883', '0884', '0885', '0886', '0887', '0888'].includes(prefix)) {
         setDetectedOperator('SMARTFREN');
       } else {
@@ -56,12 +56,12 @@ const PulsaPurchase = () => {
 
     purchasePulsa({
       phone_number: phoneNumber,
-      operator: selectedProduct.operator,
-      product_id: selectedProduct.buyer_sku_code,
+      operator: detectedOperator,
+      product_id: selectedProduct.sku,
       product_name: selectedProduct.product_name,
-      nominal: selectedProduct.nominal,
-      price: selectedProduct.price,
-      sku: selectedProduct.buyer_sku_code,
+      nominal: extractNominalFromName(selectedProduct.product_name),
+      price: selectedProduct.buyer_price,
+      sku: selectedProduct.sku,
     }, {
       onSuccess: () => {
         // Reset form after successful purchase
@@ -70,6 +70,16 @@ const PulsaPurchase = () => {
         setDetectedOperator('');
       }
     });
+  };
+
+  // Helper function to extract nominal from product name
+  const extractNominalFromName = (productName: string): number => {
+    const match = productName.match(/(\d+)\.?(\d+)?/);
+    if (match) {
+      const thousands = match[2] ? parseInt(match[1]) * 1000 + parseInt(match[2]) : parseInt(match[1]) * 1000;
+      return thousands;
+    }
+    return 0;
   };
 
   if (isPageLoading) {
@@ -134,7 +144,7 @@ const PulsaPurchase = () => {
                     key={index}
                     onClick={() => setSelectedProduct(product)}
                     className={`w-full p-4 rounded-lg border-2 text-left transition-colors ${
-                      selectedProduct?.buyer_sku_code === product.buyer_sku_code
+                      selectedProduct?.sku === product.sku
                         ? 'border-green-500 bg-green-50'
                         : 'border-gray-200 hover:border-green-300'
                     }`}
@@ -143,14 +153,14 @@ const PulsaPurchase = () => {
                       <div>
                         <div className="flex items-center space-x-2 mb-1">
                           <span className="inline-block bg-green-100 text-green-600 text-xs px-2 py-1 rounded-full">
-                            {product.operator}
+                            {product.brand.toUpperCase()}
                           </span>
                         </div>
                         <h4 className="font-semibold text-gray-800">{product.product_name}</h4>
-                        <p className="text-sm text-gray-500">Nominal: {product.nominal?.toLocaleString()}</p>
+                        <p className="text-sm text-gray-500">{product.description}</p>
                       </div>
                       <span className="font-bold text-green-600">
-                        Rp {product.price?.toLocaleString()}
+                        Rp {product.buyer_price?.toLocaleString()}
                       </span>
                     </div>
                   </button>
@@ -187,12 +197,12 @@ const PulsaPurchase = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Harga</span>
-                <span className="font-medium">Rp {selectedProduct.price?.toLocaleString()}</span>
+                <span className="font-medium">Rp {selectedProduct.buyer_price?.toLocaleString()}</span>
               </div>
               <hr />
               <div className="flex justify-between text-lg font-bold">
                 <span>Total Bayar</span>
-                <span className="text-green-600">Rp {selectedProduct.price?.toLocaleString()}</span>
+                <span className="text-green-600">Rp {selectedProduct.buyer_price?.toLocaleString()}</span>
               </div>
             </div>
             

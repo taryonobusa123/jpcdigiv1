@@ -9,13 +9,26 @@ export function usePulsaProducts(operator?: string) {
       console.log('Fetching pulsa products for operator:', operator);
       
       let query = supabase
-        .from('pulsa_products')
+        .from('products')
         .select('*')
+        .eq('category', 'pulsa')
         .eq('is_active', true)
-        .order('nominal', { ascending: true });
+        .order('buyer_price', { ascending: true });
 
       if (operator) {
-        query = query.eq('operator', operator);
+        // Map operator names to brand names used in products table
+        const brandMapping: { [key: string]: string } = {
+          'TELKOMSEL': 'telkomsel',
+          'INDOSAT': 'indosat',
+          'XL': 'xl',
+          'AXIS': 'axis',
+          'TRI': 'tri',
+          'THREE': 'tri',
+          'SMARTFREN': 'smartfren'
+        };
+        
+        const brand = brandMapping[operator] || operator.toLowerCase();
+        query = query.eq('brand', brand);
       }
 
       const { data, error } = await query;
@@ -28,7 +41,7 @@ export function usePulsaProducts(operator?: string) {
       console.log('Fetched pulsa products:', data);
       return data;
     },
-    enabled: true, // Always enabled to show loading state
+    enabled: true,
   });
 }
 
@@ -37,17 +50,30 @@ export function usePulsaOperators() {
     queryKey: ['pulsa-operators'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('pulsa_products')
-        .select('operator')
+        .from('products')
+        .select('brand')
+        .eq('category', 'pulsa')
         .eq('is_active', true);
 
       if (error) {
         throw error;
       }
 
-      // Get unique operators
-      const operators = [...new Set(data.map(item => item.operator))];
-      return operators;
+      // Get unique operators and map them back to display names
+      const brands = [...new Set(data.map(item => item.brand))];
+      const displayNames = brands.map(brand => {
+        const displayMapping: { [key: string]: string } = {
+          'telkomsel': 'TELKOMSEL',
+          'indosat': 'INDOSAT',
+          'xl': 'XL',
+          'axis': 'AXIS',
+          'tri': 'TRI',
+          'smartfren': 'SMARTFREN'
+        };
+        return displayMapping[brand] || brand.toUpperCase();
+      });
+      
+      return displayNames;
     },
   });
 }
