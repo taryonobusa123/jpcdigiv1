@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 interface PLNMeterCheckProps {
   customerNumber: string;
@@ -29,9 +30,19 @@ const PLNMeterCheck = ({
         />
         
         {customerNumber.trim() && (
-          <div className="text-sm text-green-600 bg-green-50 p-3 rounded-lg">
-            ✓ Produk PLN tersedia untuk nomor meter: {customerNumber}
-          </div>
+          <>
+            <Button
+              onClick={onCheckMeter}
+              disabled={isCheckingMeter}
+              className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-medium"
+            >
+              {isCheckingMeter ? 'Mengecek...' : 'Cek Data Meter'}
+            </Button>
+            
+            <div className="text-sm text-green-600 bg-green-50 p-3 rounded-lg">
+              ✓ Produk PLN tersedia untuk nomor meter: {customerNumber}
+            </div>
+          </>
         )}
       </div>
     </div>

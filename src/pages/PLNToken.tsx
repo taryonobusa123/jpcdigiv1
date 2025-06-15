@@ -4,10 +4,12 @@ import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { usePlnProducts } from '@/hooks/usePlnProducts';
+import { usePlnMeterCheck } from '@/hooks/usePlnMeterCheck';
 import { usePlnDirectPurchase } from '@/hooks/usePlnDirectPurchase';
 import BottomNavigation from '../components/BottomNavigation';
 import LoadingScreen from '../components/LoadingScreen';
 import PLNMeterCheck from '../components/pln/PLNMeterCheck';
+import PLNCustomerData from '../components/pln/PLNCustomerData';
 import PLNProductList from '../components/pln/PLNProductList';
 import PLNInformation from '../components/pln/PLNInformation';
 
@@ -15,8 +17,10 @@ const PLNToken = () => {
   const { user } = useAuth();
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [meterNumber, setMeterNumber] = useState('');
+  const [meterData, setMeterData] = useState(null);
   
   const { data: plnProducts, isLoading: isProductsLoading } = usePlnProducts();
+  const { mutate: checkMeter, isPending: isCheckingMeter } = usePlnMeterCheck();
   const { mutate: purchaseToken, isPending: isPurchasing } = usePlnDirectPurchase();
 
   useEffect(() => {
@@ -29,6 +33,25 @@ const PLNToken = () => {
 
   const handleMeterNumberChange = (value: string) => {
     setMeterNumber(value);
+    // Reset meter data when number changes
+    if (meterData) {
+      setMeterData(null);
+    }
+  };
+
+  const handleCheckMeter = () => {
+    if (!meterNumber.trim()) return;
+
+    checkMeter(meterNumber, {
+      onSuccess: (data) => {
+        if (data.success && data.data) {
+          setMeterData({
+            customer_name: data.data.customer_name,
+            segment_power: data.data.tarif || data.data.power || 'R1/900VA'
+          });
+        }
+      }
+    });
   };
 
   const handlePurchase = (product: any) => {
@@ -68,9 +91,13 @@ const PLNToken = () => {
         <PLNMeterCheck
           customerNumber={meterNumber}
           setCustomerNumber={handleMeterNumberChange}
-          onCheckMeter={() => {}} // Not needed for direct purchase
-          isCheckingMeter={false}
+          onCheckMeter={handleCheckMeter}
+          isCheckingMeter={isCheckingMeter}
         />
+
+        {meterData && (
+          <PLNCustomerData meterData={meterData} />
+        )}
 
         {meterNumber.trim() && plnProducts && (
           <PLNProductList
