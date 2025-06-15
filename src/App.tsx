@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
+import Profile from "./pages/Profile";
 import ProductList from "@/pages/ProductList";
 import Admin from "@/pages/Admin";
 import TestPurchase from "@/pages/TestPurchase";
@@ -26,6 +27,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/verify-whatsapp" element={<WhatsAppVerificationPage />} />
             <Route path="/products" element={<ProductList />} />
             <Route path="/admin" element={<Admin />} />
