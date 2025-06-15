@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdminStats, useAdminTransactions, useAdminTopupRequests, useUpdateTopupRequest, useSyncProducts } from '@/hooks/useAdmin';
@@ -8,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import ProductPricingManager from '@/components/admin/ProductPricingManager';
 import { 
   Users, 
   CreditCard, 
@@ -139,6 +139,7 @@ export default function Admin() {
             <TabsTrigger value="transactions">Transactions</TabsTrigger>
             <TabsTrigger value="topup-requests">Top Up Requests</TabsTrigger>
             <TabsTrigger value="products">Products</TabsTrigger>
+            <TabsTrigger value="pricing">Pricing Management</TabsTrigger>
           </TabsList>
 
           <TabsContent value="transactions">
@@ -307,6 +308,13 @@ export default function Admin() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="pricing">
+            <ProductPricingManager 
+              products={products || []} 
+              isLoading={productsLoading} 
+            />
           </TabsContent>
         </Tabs>
       </div>
