@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -77,7 +76,7 @@ export function useDataPackagePurchase() {
       });
 
       // Process transaction via edge function
-      const { data: result, error: processError, status, } = await supabase.functions.invoke('process-transaction', {
+      const { data: result, error: processError } = await supabase.functions.invoke('process-transaction', {
         body: { 
           transaction_id: dataTransaction.id,
           ref_id,
@@ -150,4 +149,3 @@ export function useDataPackagePurchase() {
     },
   });
 }
-
