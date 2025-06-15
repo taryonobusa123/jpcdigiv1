@@ -1,6 +1,4 @@
-
 import React from 'react';
-import Header from '../components/Header';
 import BalanceCard from '../components/BalanceCard';
 import QuickActions from '../components/QuickActions';
 import PromoSection from '../components/PromoSection';
@@ -105,9 +103,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <Header />
-      
-      <main className="pb-6">
+      <main className="pb-6 pt-6">
         <BalanceCard />
         <QuickActions />
         <PromoSection />
