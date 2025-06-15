@@ -59,7 +59,7 @@ const App = () => (
             <Route path="/test-purchase" element={<TestPurchase />} />
             <Route path="/pln-token" element={<PLNToken />} />
             <Route path="/pulsa" element={<PulsaPurchase />} />
-            <Route path="/topup" element={<TopUp />} />
+            {/* <Route path="/topup" element={<TopUp />} /> REMOVED as requested */}
             <Route path="/topup-saldo" element={<TopupSaldo />} />
             <Route path="/topup-history" element={<TopupHistory />} />
             <Route path="/topup-detail/:id" element={<TopupDetail />} />
