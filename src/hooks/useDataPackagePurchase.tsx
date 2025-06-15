@@ -68,9 +68,25 @@ export function useDataPackagePurchase() {
         }
       });
 
+      // --- Tambahan: Ekstrak pesan error yang lebih informatif jika ada error ---
       if (processError) {
+        let friendlyError = 'Gagal memproses transaksi';
+        try {
+          // Supabase edge functions' error (processError.message is usually from function body)
+          if (processError instanceof Error) {
+            // Beberapa error di-wrap berdasarkan spec Supabase-js
+            friendlyError = processError.message;
+          } else if (typeof processError === 'object') {
+            // Fungsi edge return {error, detail}
+            if (processError.error || processError.detail) {
+              friendlyError = (processError.error || '') + ': ' + (processError.detail || '');
+            }
+          }
+        } catch (innerCatch) {
+          // fall back silently
+        }
         console.error('Transaction processing error:', processError);
-        throw new Error('Gagal memproses transaksi');
+        throw new Error(friendlyError);
       }
 
       console.log('Purchase result:', result);
@@ -103,3 +119,4 @@ export function useDataPackagePurchase() {
     },
   });
 }
+
