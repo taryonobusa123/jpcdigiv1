@@ -20,11 +20,23 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { whatsapp_number, otp_code, user_id } = await req.json();
     
+    console.log('Verifying OTP:', { whatsapp_number, otp_code, user_id });
+    
     if (!whatsapp_number || !otp_code) {
       return new Response(
         JSON.stringify({ error: 'Nomor WhatsApp dan kode OTP diperlukan' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // Clean up expired OTPs first
+    const { error: cleanupError } = await supabase
+      .from('otp_codes')
+      .delete()
+      .lt('expires_at', new Date().toISOString());
+
+    if (cleanupError) {
+      console.error('Cleanup error:', cleanupError);
     }
 
     // Verify OTP
@@ -39,7 +51,17 @@ const handler = async (req: Request): Promise<Response> => {
       .limit(1)
       .maybeSingle();
 
-    if (otpError || !otpData) {
+    console.log('OTP query result:', { otpData, otpError });
+
+    if (otpError) {
+      console.error('Database error:', otpError);
+      return new Response(
+        JSON.stringify({ error: 'Terjadi kesalahan saat memverifikasi OTP' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!otpData) {
       return new Response(
         JSON.stringify({ error: 'Kode OTP tidak valid atau sudah kadaluarsa' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -47,17 +69,30 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Mark OTP as used
-    await supabase
+    const { error: updateError } = await supabase
       .from('otp_codes')
       .update({ is_used: true })
       .eq('id', otpData.id);
 
+    if (updateError) {
+      console.error('Update OTP error:', updateError);
+      return new Response(
+        JSON.stringify({ error: 'Gagal memperbarui status OTP' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Update user profile verification status
     if (user_id) {
-      await supabase
+      const { error: profileError } = await supabase
         .from('profiles')
         .update({ is_whatsapp_verified: true })
         .eq('id', user_id);
+
+      if (profileError) {
+        console.error('Profile update error:', profileError);
+        // Don't fail the whole operation if profile update fails
+      }
     }
 
     return new Response(

@@ -118,7 +118,6 @@ export default function WhatsAppVerification({
       console.error('Send OTP error:', error);
       setHasError(true);
       
-      // Show more user-friendly error messages
       let errorMessage = "Gagal mengirim kode OTP";
       
       if (error.message?.includes('Request Failed')) {
@@ -150,7 +149,7 @@ export default function WhatsAppVerification({
 
     setIsLoading(true);
     try {
-      console.log('Attempting to verify OTP:', otpCode);
+      console.log('Attempting to verify OTP:', otpCode, 'for number:', whatsappNumber);
       
       const { data, error } = await supabase.functions.invoke('verify-whatsapp-otp', {
         body: { 
@@ -164,7 +163,7 @@ export default function WhatsAppVerification({
 
       if (error) {
         console.error('Verify function error:', error);
-        throw new Error(error.message || 'Gagal memverifikasi OTP');
+        throw new Error('Terjadi kesalahan saat memverifikasi OTP');
       }
 
       if (data?.error) {
@@ -172,17 +171,21 @@ export default function WhatsAppVerification({
         throw new Error(data.error);
       }
 
-      toast({
-        title: "Berhasil",
-        description: "Verifikasi WhatsApp berhasil!",
-      });
-      
-      onVerificationComplete();
+      if (data?.success) {
+        toast({
+          title: "Berhasil",
+          description: "Verifikasi WhatsApp berhasil!",
+        });
+        
+        onVerificationComplete();
+      } else {
+        throw new Error('Kode OTP tidak valid');
+      }
     } catch (error: any) {
       console.error('Verify OTP error:', error);
       
-      let errorMessage = "Kode OTP tidak valid";
-      if (error.message) {
+      let errorMessage = "Kode OTP tidak valid atau sudah kadaluarsa";
+      if (error.message && !error.message.includes('non-2xx')) {
         errorMessage = error.message;
       }
       
