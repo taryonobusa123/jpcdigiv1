@@ -288,12 +288,25 @@ export default function Admin() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {products?.slice(0, 50).map((product) => (
+                      {/* Tampilkan semua produk termasuk pascabayar */}
+                      {products?.filter((product) =>
+                        product.category === "pascabayar" ||
+                        product.category === "pulsa" ||
+                        product.category === "data" ||
+                        product.category === "electricity" ||
+                        product.category === "emoney" ||
+                        product.category === "gaming" ||
+                        product.category === "voucher"
+                      ).slice(0, 50).map((product) => (
                         <TableRow key={product.id}>
                           <TableCell className="font-mono text-xs">{product.sku}</TableCell>
                           <TableCell>{product.product_name}</TableCell>
                           <TableCell>
-                            <Badge variant="outline">{product.category}</Badge>
+                            <Badge variant="outline">
+                              {product.category === 'pascabayar'
+                                ? 'Pascabayar'
+                                : product.category.charAt(0).toUpperCase() + product.category.slice(1)}
+                            </Badge>
                           </TableCell>
                           <TableCell>{product.brand}</TableCell>
                           <TableCell>{formatCurrency(product.seller_price)}</TableCell>
