@@ -15,23 +15,27 @@ export function usePlnMeterCheck() {
       });
 
       if (error) {
-        console.error('PLN meter check error:', error);
-        throw error;
+        console.error('Supabase function error:', error);
+        throw new Error('Gagal menghubungi server');
       }
 
-      if (!data.success) {
-        throw new Error(data.message || 'Gagal cek nomor meter');
+      console.log('PLN meter check response:', data);
+
+      if (!data || !data.success) {
+        throw new Error(data?.message || 'Gagal cek nomor meter');
       }
 
       return data;
     },
     onSuccess: (data) => {
-      toast({
-        title: "Berhasil",
-        description: `Data pelanggan ditemukan: ${data.data.customer_name}`,
-      });
+      if (data.success && data.data) {
+        toast({
+          title: "Berhasil",
+          description: `Data pelanggan ditemukan: ${data.data.customer_name}`,
+        });
+      }
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('PLN meter check error:', error);
       toast({
         title: "Error",
