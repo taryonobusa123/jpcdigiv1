@@ -6,7 +6,14 @@ import BottomNavigation from '../components/BottomNavigation';
 
 const BPJSKesehatan = () => {
   const [participantNumber, setParticipantNumber] = useState('');
-  const [billInfo, setBillInfo] = useState(null);
+  const [billInfo, setBillInfo] = useState<null | {
+    name: string;
+    class: string;
+    participants: number;
+    period: string;
+    amount: string;
+    adminFee: string;
+  }>(null);
 
   const handleCheck = () => {
     setBillInfo({
@@ -35,7 +42,6 @@ const BPJSKesehatan = () => {
       <div className="p-4 space-y-4">
         <div className="bg-white rounded-xl shadow-md p-4">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Nomor Peserta</h3>
-          
           <input
             type="text"
             value={participantNumber}
@@ -43,7 +49,6 @@ const BPJSKesehatan = () => {
             placeholder="Masukkan nomor peserta BPJS"
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent mb-4"
           />
-          
           <button
             onClick={handleCheck}
             className="w-full bg-green-500 text-white py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors"
@@ -55,7 +60,6 @@ const BPJSKesehatan = () => {
         {billInfo && (
           <div className="bg-white rounded-xl shadow-md p-4">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Detail Iuran</h3>
-            
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-gray-600">Nama Peserta</span>
@@ -88,7 +92,6 @@ const BPJSKesehatan = () => {
                 <span className="text-green-600">Rp 170.500</span>
               </div>
             </div>
-            
             <button className="w-full bg-green-500 text-white py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors mt-4">
               Bayar Iuran
             </button>
@@ -105,7 +108,6 @@ const BPJSKesehatan = () => {
           </ul>
         </div>
       </div>
-
       <BottomNavigation />
     </div>
   );

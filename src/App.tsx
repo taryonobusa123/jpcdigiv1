@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -32,7 +31,8 @@ import History from "./pages/History";
 import PDAM from "./pages/PDAM";
 import Delivery from "./pages/Delivery";
 import Wallet from "./pages/Wallet";
-import Gaming from "./pages/Gaming"; // Tambahkan import Gaming
+import Gaming from "./pages/Gaming";
+import BPJSKesehatan from "./pages/BPJSKesehatan";
 
 const queryClient = new QueryClient();
 
@@ -71,7 +71,8 @@ const App = () => (
             <Route path="/pdam" element={<PDAM />} />
             <Route path="/services" element={<Delivery />} />
             <Route path="/wallet" element={<TopupSaldo />} />
-            <Route path="/gaming" element={<Gaming />} /> {/* Tambahkan route /gaming */}
+            <Route path="/gaming" element={<Gaming />} />
+            <Route path="/insurance/bpjs-kesehatan" element={<BPJSKesehatan />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
