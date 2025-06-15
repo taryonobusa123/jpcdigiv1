@@ -12,7 +12,6 @@ interface AuthContextType {
   signUp: (email: string, password: string, fullName?: string, whatsappNumber?: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
-  loginWithWhatsApp: (accessToken: string, refreshToken: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -49,16 +48,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
         setUser(session?.user ?? null);
         setLoading(false);
-        
-        // Refresh profile when user signs in
-        if (event === 'SIGNED_IN' && session?.user) {
-          setTimeout(() => {
-            refreshProfile();
-          }, 100);
-        }
       }
     );
 
@@ -72,33 +63,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(null);
     }
   }, [user]);
-
-  const loginWithWhatsApp = async (accessToken: string, refreshToken: string) => {
-    try {
-      const { data, error } = await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken
-      });
-
-      if (error) throw error;
-
-      if (data.user) {
-        setUser(data.user);
-        toast({
-          title: "Berhasil",
-          description: "Login WhatsApp berhasil",
-        });
-      }
-    } catch (error: any) {
-      console.error('Login with WhatsApp error:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Gagal login dengan WhatsApp",
-        variant: "destructive",
-      });
-      throw error;
-    }
-  };
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -158,14 +122,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       throw error;
     }
-
-    setUser(null);
-    setProfile(null);
-    
-    toast({
-      title: "Berhasil",
-      description: "Logout berhasil",
-    });
   };
 
   return (
@@ -177,7 +133,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signUp,
       signOut,
       refreshProfile,
-      loginWithWhatsApp,
     }}>
       {children}
     </AuthContext.Provider>

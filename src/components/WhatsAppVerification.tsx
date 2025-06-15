@@ -6,7 +6,6 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { Phone, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 
 interface WhatsAppVerificationProps {
   whatsappNumber: string;
@@ -19,7 +18,6 @@ export default function WhatsAppVerification({ whatsappNumber, onVerificationCom
   const [isSending, setIsSending] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const { toast } = useToast();
-  const { loginWithWhatsApp } = useAuth();
 
   const startCountdown = () => {
     setCountdown(60);
@@ -83,11 +81,23 @@ export default function WhatsAppVerification({ whatsappNumber, onVerificationCom
 
       // Login user with received tokens
       if (data.access_token && data.refresh_token) {
-        await loginWithWhatsApp(data.access_token, data.refresh_token);
-        onVerificationComplete();
-      } else {
-        throw new Error('Token tidak diterima dari server');
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: data.access_token,
+          refresh_token: data.refresh_token
+        });
+
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          throw sessionError;
+        }
       }
+
+      toast({
+        title: "Berhasil",
+        description: "Login berhasil!",
+      });
+      
+      onVerificationComplete();
     } catch (error: any) {
       console.error('Verify OTP error:', error);
       toast({
