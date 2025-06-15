@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Calendar, Filter, Search, CheckCircle, Clock, XCircle, 
@@ -61,7 +60,7 @@ const History = () => {
       case 'failed':
         return 'Gagal';
       default:
-        return 'Pending';
+        return status ? status : 'Status Tidak Dikenal';
     }
   };
 
@@ -79,9 +78,15 @@ const History = () => {
   };
 
   const filteredTransactions = transactions.filter(transaction => {
-    const matchesTab = activeTab === 'all' || transaction.status === activeTab;
-    const matchesSearch = transaction.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         transaction.description.toLowerCase().includes(searchQuery.toLowerCase());
+    // Tampilkan semua status pada tab 'all'
+    const matchesTab =
+      activeTab === 'all'
+        ? true
+        : transaction.status === activeTab;
+
+    const matchesSearch =
+      transaction.type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      transaction.description?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesTab && matchesSearch;
   });
 
