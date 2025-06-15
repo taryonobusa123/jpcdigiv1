@@ -1,10 +1,10 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EWALLET_BRAND_LOGOS } from "./ewallet-brand-logos";
+import EwalletTransactionModal from "./EwalletTransactionModal";
 
 type Product = {
   id: string;
@@ -38,8 +38,14 @@ function pickColor(idx: number) {
 const EwalletBrandGrid: React.FC<EwalletBrandGridProps> = ({ brandGroups }) => {
   const brandNames = Object.keys(brandGroups).sort();
   const [openBrand, setOpenBrand] = useState<string | null>(null);
-  // Track image loading error by brand name
   const [imgError, setImgError] = useState<Record<string, boolean>>({});
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [transactionModalOpen, setTransactionModalOpen] = useState(false);
+
+  const handleBuy = (product: Product) => {
+    setSelectedProduct(product);
+    setTransactionModalOpen(true);
+  };
 
   return (
     <div>
@@ -73,6 +79,8 @@ const EwalletBrandGrid: React.FC<EwalletBrandGridProps> = ({ brandGroups }) => {
           );
         })}
       </div>
+
+      {/* Modal produk-produk per brand */}
       {openBrand && (
         <Dialog open onOpenChange={() => setOpenBrand(null)}>
           <DialogContent>
@@ -95,7 +103,10 @@ const EwalletBrandGrid: React.FC<EwalletBrandGridProps> = ({ brandGroups }) => {
                     <div className="font-semibold text-blue-600 text-lg">
                       Rp{Number(product.buyer_price || 0).toLocaleString("id-ID")}
                     </div>
-                    <Button size="sm" onClick={() => alert(`Transaksi ewallet akan dibuat untuk produk: ${product.product_name} (${product.buyer_sku_code})`)}>
+                    <Button size="sm" onClick={() => {
+                      setOpenBrand(null);
+                      handleBuy(product);
+                    }}>
                       Beli
                     </Button>
                   </div>
@@ -105,9 +116,17 @@ const EwalletBrandGrid: React.FC<EwalletBrandGridProps> = ({ brandGroups }) => {
           </DialogContent>
         </Dialog>
       )}
+      {/* Modal transaksi: detail + input + konfirmasi */}
+      <EwalletTransactionModal
+        open={transactionModalOpen}
+        onOpenChange={(open) => {
+          setTransactionModalOpen(open);
+          if (!open) setSelectedProduct(null);
+        }}
+        product={selectedProduct}
+      />
     </div>
   );
 };
 
 export default EwalletBrandGrid;
-
