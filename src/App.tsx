@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -28,6 +29,7 @@ import Transfer from "@/pages/Transfer";
 import DataPackagePurchase from "@/pages/DataPackagePurchase";
 import TransactionDetail from "@/pages/TransactionDetail";
 import EWalletTransaksi from "./pages/EWalletTransaksi";
+import History from "./pages/History"; // Tambah import History
 
 const queryClient = new QueryClient();
 
@@ -63,6 +65,7 @@ const App = () => (
             <Route path="/data-packages" element={<DataPackagePurchase />} />
             <Route path="/transaction-detail/:id" element={<TransactionDetail />} />
             <Route path="/ewallet-transaksi" element={<EWalletTransaksi />} />
+            <Route path="/history" element={<History />} /> {/* Tambahkan route ini */}
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
@@ -71,3 +74,4 @@ const App = () => (
 );
 
 export default App;
+
