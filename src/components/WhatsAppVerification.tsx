@@ -1,11 +1,13 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
-import { Phone, Shield } from 'lucide-react';
+import { Phone, Shield, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface WhatsAppVerificationProps {
   whatsappNumber: string;
@@ -18,6 +20,7 @@ export default function WhatsAppVerification({ whatsappNumber, onVerificationCom
   const [isSending, setIsSending] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const startCountdown = () => {
     setCountdown(60);
@@ -73,28 +76,16 @@ export default function WhatsAppVerification({ whatsappNumber, onVerificationCom
       const { data, error } = await supabase.functions.invoke('verify-whatsapp-otp', {
         body: { 
           whatsapp_number: whatsappNumber, 
-          otp_code: otpCode
+          otp_code: otpCode,
+          user_id: user?.id 
         }
       });
 
       if (error) throw error;
 
-      // Login user with received tokens
-      if (data.access_token && data.refresh_token) {
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: data.access_token,
-          refresh_token: data.refresh_token
-        });
-
-        if (sessionError) {
-          console.error('Session error:', sessionError);
-          throw sessionError;
-        }
-      }
-
       toast({
         title: "Berhasil",
-        description: "Login berhasil!",
+        description: "Verifikasi WhatsApp berhasil!",
       });
       
       onVerificationComplete();
@@ -161,7 +152,7 @@ export default function WhatsAppVerification({ whatsappNumber, onVerificationCom
             disabled={isLoading || otpCode.length !== 6}
             className="w-full"
           >
-            {isLoading ? 'Memverifikasi...' : 'Verifikasi & Masuk'}
+            {isLoading ? 'Memverifikasi...' : 'Verifikasi Kode'}
           </Button>
         </div>
 
