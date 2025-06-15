@@ -6,6 +6,8 @@ export function usePulsaProducts(operator?: string) {
   return useQuery({
     queryKey: ['pulsa-products', operator],
     queryFn: async () => {
+      console.log('Fetching pulsa products for operator:', operator);
+      
       let query = supabase
         .from('pulsa_products')
         .select('*')
@@ -19,11 +21,14 @@ export function usePulsaProducts(operator?: string) {
       const { data, error } = await query;
 
       if (error) {
+        console.error('Error fetching pulsa products:', error);
         throw error;
       }
 
+      console.log('Fetched pulsa products:', data);
       return data;
     },
+    enabled: true, // Always enabled to show loading state
   });
 }
 

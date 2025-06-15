@@ -15,7 +15,7 @@ const PulsaPurchase = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [detectedOperator, setDetectedOperator] = useState('');
   
-  const { data: products, isLoading: isLoadingProducts } = usePulsaProducts();
+  const { data: products, isLoading: isLoadingProducts } = usePulsaProducts(detectedOperator);
   const { mutate: purchasePulsa, isPending: isPurchasing } = usePulsaPurchase();
 
   useEffect(() => {
@@ -30,6 +30,7 @@ const PulsaPurchase = () => {
     if (phoneNumber.length >= 4) {
       const prefix = phoneNumber.substring(0, 4);
       
+      // Updated operator detection to match the database operator names
       if (['0811', '0812', '0813', '0821', '0822', '0851', '0852', '0853'].includes(prefix)) {
         setDetectedOperator('TELKOMSEL');
       } else if (['0814', '0815', '0816', '0855', '0856', '0857', '0858'].includes(prefix)) {
@@ -79,10 +80,8 @@ const PulsaPurchase = () => {
     return <LoadingScreen message="Memproses pembelian pulsa..." />;
   }
 
-  // Filter products based on detected operator using the operator field from pulsa_products table
-  const filteredProducts = products?.filter(product => 
-    detectedOperator ? product.operator === detectedOperator : true
-  ) || [];
+  // Use products from the hook (already filtered by operator)
+  const filteredProducts = products || [];
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -157,7 +156,7 @@ const PulsaPurchase = () => {
                   </button>
                 ))}
                 
-                {filteredProducts.length === 0 && (
+                {filteredProducts.length === 0 && !isLoadingProducts && (
                   <div className="text-center py-8">
                     <Smartphone className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                     <p className="text-gray-500">
