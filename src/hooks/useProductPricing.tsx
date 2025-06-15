@@ -45,16 +45,21 @@ export function useUpdateProductPrice() {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['products', 'all'] });
       
-      // Update the cache immediately with the new data
+      // Update the cache immediately with the new data - with proper null checks
       queryClient.setQueryData(['products', 'all'], (oldData: any) => {
-        if (oldData && Array.isArray(oldData)) {
-          return oldData.map((product: any) => 
-            product.id === updatedData.id 
-              ? { ...product, buyer_price: updatedData.buyer_price, updated_at: updatedData.updated_at }
-              : product
-          );
+        if (!oldData || !Array.isArray(oldData) || !updatedData) {
+          return oldData;
         }
-        return oldData;
+        
+        return oldData.map((product: any) => {
+          if (!product || !product.id) {
+            return product;
+          }
+          
+          return product.id === updatedData.id 
+            ? { ...product, buyer_price: updatedData.buyer_price, updated_at: updatedData.updated_at }
+            : product;
+        });
       });
       
       toast({
@@ -172,16 +177,21 @@ export function useBatchUpdatePrices() {
       // Force complete refresh of products data
       queryClient.invalidateQueries({ queryKey: ['products'] });
       
-      // Update cache with new data if available
+      // Update cache with new data if available - with proper null checks
       if (data.updatedProducts && data.updatedProducts.length > 0) {
         queryClient.setQueryData(['products', 'all'], (oldData: any) => {
-          if (oldData && Array.isArray(oldData)) {
-            return oldData.map((product: any) => {
-              const updatedProduct = data.updatedProducts.find((p: any) => p.id === product.id);
-              return updatedProduct ? { ...product, ...updatedProduct } : product;
-            });
+          if (!oldData || !Array.isArray(oldData)) {
+            return oldData;
           }
-          return oldData;
+          
+          return oldData.map((product: any) => {
+            if (!product || !product.id) {
+              return product;
+            }
+            
+            const updatedProduct = data.updatedProducts.find((p: any) => p && p.id === product.id);
+            return updatedProduct ? { ...product, ...updatedProduct } : product;
+          });
         });
       }
       
