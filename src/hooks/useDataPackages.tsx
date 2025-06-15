@@ -14,7 +14,8 @@ export function useDataPackages(operator?: string) {
         .order('buyer_price', { ascending: true });
 
       if (operator) {
-        query = query.eq('brand', operator);
+        // Gunakan ilike untuk pencocokan tidak case-sensitive
+        query = query.ilike('brand', operator.toLowerCase());
       }
 
       const { data, error } = await query;

@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Smartphone } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -15,6 +14,15 @@ function toTitleCase(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
 
+const BRAND_MAPPING: Record<string, string> = {
+  'telkomsel': 'telkomsel',
+  'indosat': 'indosat',
+  'xl': 'xl',
+  'axis': 'axis',
+  'tri': 'tri',
+  'smartfren': 'smartfren'
+};
+
 const PhoneNumberInput = ({ phoneNumber, setPhoneNumber, onOperatorDetected }: PhoneNumberInputProps) => {
   const [detectedOperator, setDetectedOperator] = React.useState('');
 
@@ -24,21 +32,21 @@ const PhoneNumberInput = ({ phoneNumber, setPhoneNumber, onOperatorDetected }: P
 
       let operator = '';
       if (['0811', '0812', '0813', '0821', '0822', '0851', '0852', '0853'].includes(prefix)) {
-        operator = 'Telkomsel';
+        operator = 'telkomsel';
       } else if (['0814', '0815', '0816', '0855', '0856', '0857', '0858'].includes(prefix)) {
-        operator = 'Indosat';
+        operator = 'indosat';
       } else if (['0817', '0818', '0819', '0859', '0877', '0878'].includes(prefix)) {
-        operator = 'Xl';
+        operator = 'xl';
       } else if (['0838', '0831', '0832', '0833'].includes(prefix)) {
-        operator = 'Axis';
+        operator = 'axis';
       } else if (['0895', '0896', '0897', '0898', '0899'].includes(prefix)) {
-        operator = 'Tri';
+        operator = 'tri';
       } else if (['0881', '0882', '0883', '0884', '0885', '0886', '0887', '0888'].includes(prefix)) {
-        operator = 'Smartfren';
+        operator = 'smartfren';
       }
 
       setDetectedOperator(operator);
-      onOperatorDetected(operator);
+      onOperatorDetected(operator); // operator (lowercase) untuk ke query
     } else {
       setDetectedOperator('');
       onOperatorDetected('');
@@ -63,7 +71,8 @@ const PhoneNumberInput = ({ phoneNumber, setPhoneNumber, onOperatorDetected }: P
         {detectedOperator && (
           <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
             <span className="bg-purple-100 text-purple-600 px-2 py-1 rounded-full text-xs font-medium">
-              {detectedOperator}
+              {/* Tampilkan operator dengan huruf besar di awal */}
+              {toTitleCase(detectedOperator)}
             </span>
           </div>
         )}
