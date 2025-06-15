@@ -14,13 +14,26 @@ import PurchaseSummary from '@/components/data-packages/PurchaseSummary';
 const DataPackagePurchase = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [selectedOperator, setSelectedOperator] = useState('');
+  const [detectedOperator, setDetectedOperator] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   const { user, profile } = useAuth();
   const { data: operators = [] } = useDataOperators();
-  const { data: packages = [], isLoading } = useDataPackages(selectedOperator);
+  
+  // Use detected operator if no manual selection, otherwise use selected operator
+  const effectiveOperator = selectedOperator || detectedOperator;
+  const { data: packages = [], isLoading } = useDataPackages(effectiveOperator);
   const purchaseMutation = useDataPackagePurchase();
+
+  const handleOperatorDetected = (operator: string) => {
+    console.log('Operator detected:', operator);
+    setDetectedOperator(operator);
+    // Reset manual selection when operator is auto-detected
+    if (operator) {
+      setSelectedOperator('');
+    }
+  };
 
   const handlePurchase = async () => {
     if (!selectedProduct || !phoneNumber) return;
@@ -40,6 +53,7 @@ const DataPackagePurchase = () => {
       setPhoneNumber('');
       setSelectedProduct(null);
       setSelectedOperator('');
+      setDetectedOperator('');
     } catch (error) {
       console.error('Purchase failed:', error);
     }
@@ -57,7 +71,8 @@ const DataPackagePurchase = () => {
       <div className="p-4 space-y-4">
         <PhoneNumberInput 
           phoneNumber={phoneNumber} 
-          setPhoneNumber={setPhoneNumber} 
+          setPhoneNumber={setPhoneNumber}
+          onOperatorDetected={handleOperatorDetected}
         />
 
         <OperatorSelector 
