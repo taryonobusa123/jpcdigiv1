@@ -2,7 +2,7 @@
 import React from "react";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useAuth } from "@/hooks/useAuth";
-import { CheckCircle, Clock, XCircle } from "lucide-react";
+import { CheckCircle, Clock, XCircle, History as HistoryIcon } from "lucide-react";
 import BottomNavigation from "../components/BottomNavigation";
 
 const StatusBadge = ({ status }: { status: string }) => {
@@ -33,13 +33,20 @@ const StatusBadge = ({ status }: { status: string }) => {
 
 const History = () => {
   const { user } = useAuth();
-  const { data: transactions, isLoading, error } = useTransactions();
+  const { data: transactions, isLoading, error, refetch } = useTransactions();
+
+  // DEBUG LOG, data di console browser
+  React.useEffect(() => {
+    console.log("USER:", user);
+    console.log("TRANSACTIONS:", transactions);
+    console.log("ERROR:", error);
+  }, [user, transactions, error]);
 
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 pb-20">
-        <div className="bg-white rounded-xl shadow p-6 mb-4 text-center">
-          <h2 className="text-xl font-bold">Login Diperlukan</h2>
+        <div className="bg-white rounded-xl shadow p-6 mb-4 text-center border">
+          <h2 className="text-xl font-bold mb-2">Login Diperlukan</h2>
           <p className="text-gray-600">Silakan login untuk melihat riwayat transaksi Anda.</p>
         </div>
         <BottomNavigation />
@@ -49,10 +56,18 @@ const History = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="bg-white sticky top-0 z-40 border-b border-gray-200 p-4">
+      <div className="bg-white sticky top-0 z-40 border-b border-gray-200 p-4 flex items-center gap-2">
+        <HistoryIcon className="w-5 h-5 text-blue-600" />
         <h1 className="text-xl font-bold">Riwayat Transaksi</h1>
+        <button
+          onClick={() => refetch()}
+          className="ml-auto bg-blue-50 text-blue-700 border border-blue-100 rounded px-2 py-1 text-xs hover:bg-blue-100 transition"
+          type="button"
+        >
+          Refresh
+        </button>
       </div>
-      <div className="px-2 mt-4">
+      <div className="px-2 mt-4 w-full max-w-md mx-auto">
         {isLoading ? (
           <div className="flex justify-center items-center py-20">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -60,12 +75,20 @@ const History = () => {
         ) : error ? (
           <div className="flex flex-col items-center text-center py-20">
             <XCircle className="w-10 h-10 text-red-400 mb-2" />
-            <p className="text-red-500">Gagal memuat riwayat transaksi.</p>
+            <p className="text-red-500 mb-2">Gagal memuat riwayat transaksi.</p>
+            <button
+              onClick={() => refetch()}
+              className="bg-gray-100 text-gray-800 px-3 py-1 rounded text-xs border hover:bg-gray-200"
+              type="button"
+            >
+              Coba lagi
+            </button>
+            <span className="mt-2 text-xs text-gray-400 break-all">{error.message}</span>
           </div>
         ) : !transactions || transactions.length === 0 ? (
           <div className="flex flex-col items-center text-center py-20">
             <Clock className="w-10 h-10 text-gray-300 mb-2" />
-            <p className="text-gray-600">Belum ada transaksi.</p>
+            <p className="text-gray-600 font-medium">Belum ada transaksi.</p>
           </div>
         ) : (
           <div className="space-y-3">
