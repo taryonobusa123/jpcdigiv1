@@ -11,6 +11,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import PLNMeterCheck from '../components/pln/PLNMeterCheck';
 import PLNCustomerData from '../components/pln/PLNCustomerData';
 import PLNProductList from '../components/pln/PLNProductList';
+import PLNPurchaseConfirmation from '../components/pln/PLNPurchaseConfirmation';
 import PLNInformation from '../components/pln/PLNInformation';
 
 const PLNToken = () => {
@@ -18,6 +19,8 @@ const PLNToken = () => {
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [meterNumber, setMeterNumber] = useState('');
   const [meterData, setMeterData] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   
   const { data: plnProducts, isLoading: isProductsLoading } = usePlnProducts();
   const { mutate: checkMeter, isPending: isCheckingMeter } = usePlnMeterCheck();
@@ -54,16 +57,24 @@ const PLNToken = () => {
     });
   };
 
-  const handlePurchase = (product: any) => {
-    if (!meterNumber.trim() || !user) return;
+  const handleProductSelect = (product: any) => {
+    setSelectedProduct(product);
+    setShowConfirmation(true);
+  };
+
+  const handleConfirmPurchase = () => {
+    if (!selectedProduct || !meterNumber.trim() || !user) return;
 
     purchaseToken({
       meter_number: meterNumber,
-      product_id: product.id,
-      product_name: product.product_name,
-      price: product.buyer_price,
-      sku: product.buyer_sku_code
+      product_id: selectedProduct.id,
+      product_name: selectedProduct.product_name,
+      price: selectedProduct.buyer_price,
+      sku: selectedProduct.buyer_sku_code
     });
+
+    setShowConfirmation(false);
+    setSelectedProduct(null);
   };
 
   if (isPageLoading) {
@@ -103,7 +114,7 @@ const PLNToken = () => {
           <PLNProductList
             products={plnProducts}
             meterNumber={meterNumber}
-            onPurchase={handlePurchase}
+            onPurchase={handleProductSelect}
             isLoading={isPurchasing}
           />
         )}
@@ -117,6 +128,17 @@ const PLNToken = () => {
 
         <PLNInformation />
       </div>
+
+      {/* Purchase Confirmation Modal */}
+      <PLNPurchaseConfirmation
+        product={selectedProduct}
+        meterNumber={meterNumber}
+        meterData={meterData}
+        open={showConfirmation}
+        onOpenChange={setShowConfirmation}
+        onConfirmPurchase={handleConfirmPurchase}
+        isLoading={isPurchasing}
+      />
 
       <BottomNavigation />
     </div>
