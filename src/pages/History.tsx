@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Calendar, Filter, Search, CheckCircle, Clock, XCircle, 
@@ -13,6 +14,9 @@ const History = () => {
   const { user } = useAuth();
   const { data: transactions = [], isLoading, error } = useTransactions();
 
+  // Log transactions for debug purposes
+  console.log('Transaksi dari useTransactions:', transactions);
+
   const tabs = [
     { id: 'all', label: 'Semua' },
     { id: 'success', label: 'Berhasil' },
@@ -22,19 +26,19 @@ const History = () => {
 
   const getTransactionIcon = (category: string, type: string) => {
     if (category === 'pulsa') return Smartphone;
-    if (type.toLowerCase().includes('pln') || type.toLowerCase().includes('listrik')) return Zap;
-    if (type.toLowerCase().includes('internet') || type.toLowerCase().includes('wifi')) return Wifi;
-    if (type.toLowerCase().includes('transfer')) return ArrowUpRight;
-    if (type.toLowerCase().includes('topup') || type.toLowerCase().includes('saldo')) return ArrowDownLeft;
+    if ((type || '').toLowerCase().includes('pln') || (type || '').toLowerCase().includes('listrik')) return Zap;
+    if ((type || '').toLowerCase().includes('internet') || (type || '').toLowerCase().includes('wifi')) return Wifi;
+    if ((type || '').toLowerCase().includes('transfer')) return ArrowUpRight;
+    if ((type || '').toLowerCase().includes('topup') || (type || '').toLowerCase().includes('saldo')) return ArrowDownLeft;
     return DollarSign;
   };
 
   const getIconColor = (category: string, type: string) => {
     if (category === 'pulsa') return { color: 'text-blue-600', bg: 'bg-blue-100' };
-    if (type.toLowerCase().includes('pln') || type.toLowerCase().includes('listrik')) return { color: 'text-yellow-600', bg: 'bg-yellow-100' };
-    if (type.toLowerCase().includes('internet') || type.toLowerCase().includes('wifi')) return { color: 'text-purple-600', bg: 'bg-purple-100' };
-    if (type.toLowerCase().includes('transfer')) return { color: 'text-red-600', bg: 'bg-red-100' };
-    if (type.toLowerCase().includes('topup') || type.toLowerCase().includes('saldo')) return { color: 'text-green-600', bg: 'bg-green-100' };
+    if ((type || '').toLowerCase().includes('pln') || (type || '').toLowerCase().includes('listrik')) return { color: 'text-yellow-600', bg: 'bg-yellow-100' };
+    if ((type || '').toLowerCase().includes('internet') || (type || '').toLowerCase().includes('wifi')) return { color: 'text-purple-600', bg: 'bg-purple-100' };
+    if ((type || '').toLowerCase().includes('transfer')) return { color: 'text-red-600', bg: 'bg-red-100' };
+    if ((type || '').toLowerCase().includes('topup') || (type || '').toLowerCase().includes('saldo')) return { color: 'text-green-600', bg: 'bg-green-100' };
     return { color: 'text-gray-600', bg: 'bg-gray-100' };
   };
 
@@ -77,6 +81,7 @@ const History = () => {
     }
   };
 
+  // Filter yang tahan jika ada tipe/desc undefined
   const filteredTransactions = transactions.filter(transaction => {
     // Tampilkan semua status pada tab 'all'
     const matchesTab =
@@ -84,9 +89,12 @@ const History = () => {
         ? true
         : transaction.status === activeTab;
 
+    const typeStr = (transaction.type || '').toLowerCase();
+    const descStr = (transaction.description || '').toLowerCase();
+
     const matchesSearch =
-      transaction.type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      transaction.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      typeStr.includes(searchQuery.toLowerCase()) ||
+      descStr.includes(searchQuery.toLowerCase());
     return matchesTab && matchesSearch;
   });
 
@@ -175,14 +183,18 @@ const History = () => {
               <Search className="w-8 h-8 text-gray-400" />
             </div>
             <h3 className="text-lg font-medium text-gray-800 mb-2">
-              {transactions.length === 0 ? 'Belum ada transaksi' : 'Tidak ada transaksi'}
+              {transactions.length === 0 
+                ? 'Belum ada transaksi' 
+                : 'Tidak ada transaksi'}
             </h3>
             <p className="text-gray-500">
               {transactions.length === 0 
                 ? 'Mulai bertransaksi untuk melihat riwayat di sini'
-                : 'Coba ubah filter atau kata kunci pencarian'
-              }
+                : 'Coba ubah filter atau kata kunci pencarian'}
             </p>
+            <div className="text-xs text-gray-400 mt-3">
+              <span>Total transaksi: {transactions.length}</span>
+            </div>
           </div>
         ) : (
           <div className="space-y-3">
@@ -199,13 +211,13 @@ const History = () => {
                     
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1">
-                        <h4 className="font-semibold text-gray-800 text-sm">{transaction.type}</h4>
+                        <h4 className="font-semibold text-gray-800 text-sm">{transaction.type || '-'}</h4>
                         <span className="font-bold text-sm text-gray-800">
-                          {transaction.amount}
+                          {transaction.amount || '-'}
                         </span>
                       </div>
                       
-                      <p className="text-gray-500 text-xs mb-2">{transaction.description}</p>
+                      <p className="text-gray-500 text-xs mb-2">{transaction.description || '-'}</p>
                       
                       {transaction.ref_id && (
                         <p className="text-gray-400 text-xs mb-1">ID: {transaction.ref_id}</p>
@@ -235,3 +247,4 @@ const History = () => {
 };
 
 export default History;
+
