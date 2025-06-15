@@ -17,43 +17,50 @@ const Profile = () => {
       icon: User,
       label: 'Edit Profil',
       description: 'Ubah informasi pribadi',
-      color: 'bg-blue-100 text-blue-600'
+      color: 'bg-blue-100 text-blue-600',
+      path: '/edit-profile'
     },
     {
       icon: CreditCard,
       label: 'Metode Pembayaran',
       description: 'Kelola kartu & rekening',
-      color: 'bg-green-100 text-green-600'
+      color: 'bg-green-100 text-green-600',
+      path: '/payment-methods'
     },
     {
       icon: Bell,
       label: 'Notifikasi',
       description: 'Atur preferensi notifikasi',
-      color: 'bg-yellow-100 text-yellow-600'
+      color: 'bg-yellow-100 text-yellow-600',
+      path: '/notifications'
     },
     {
       icon: Shield,
       label: 'Keamanan',
       description: 'PIN, password & biometrik',
-      color: 'bg-red-100 text-red-600'
+      color: 'bg-red-100 text-red-600',
+      path: '/security'
     },
     {
       icon: Gift,
       label: 'Reward & Poin',
       description: 'Tukar poin dengan hadiah',
-      color: 'bg-purple-100 text-purple-600'
+      color: 'bg-purple-100 text-purple-600',
+      path: '/rewards'
     },
     {
       icon: Phone,
       label: 'Pusat Bantuan',
       description: 'FAQ & hubungi CS',
-      color: 'bg-indigo-100 text-indigo-600'
+      color: 'bg-indigo-100 text-indigo-600',
+      path: '/help-center'
     },
     {
       icon: HelpCircle,
       label: 'Tentang Aplikasi',
       description: 'Versi & informasi aplikasi',
-      color: 'bg-gray-100 text-gray-600'
+      color: 'bg-gray-100 text-gray-600',
+      path: '/about'
     }
   ];
 
@@ -167,21 +174,24 @@ const Profile = () => {
       {/* Menu Items */}
       <div className="px-4 space-y-3">
         {menuItems.map((item, index) => (
-          <button
+          <Link
             key={index}
-            className="w-full bg-white rounded-xl shadow-sm p-4 flex items-center space-x-3 hover:bg-gray-50 transition-colors active:scale-95"
+            to={item.path}
+            className="block w-full bg-white rounded-xl shadow-sm p-4 hover:bg-gray-50 transition-colors active:scale-95"
           >
-            <div className={`p-2.5 rounded-lg ${item.color}`}>
-              <item.icon className="w-5 h-5" />
+            <div className="flex items-center space-x-3">
+              <div className={`p-2.5 rounded-lg ${item.color}`}>
+                <item.icon className="w-5 h-5" />
+              </div>
+              
+              <div className="flex-1 text-left">
+                <h4 className="font-semibold text-gray-800 text-sm">{item.label}</h4>
+                <p className="text-gray-500 text-xs">{item.description}</p>
+              </div>
+              
+              <ChevronRight className="w-5 h-5 text-gray-400" />
             </div>
-            
-            <div className="flex-1 text-left">
-              <h4 className="font-semibold text-gray-800 text-sm">{item.label}</h4>
-              <p className="text-gray-500 text-xs">{item.description}</p>
-            </div>
-            
-            <ChevronRight className="w-5 h-5 text-gray-400" />
-          </button>
+          </Link>
         ))}
 
         {/* Logout Button */}
