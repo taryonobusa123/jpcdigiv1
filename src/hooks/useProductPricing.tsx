@@ -17,23 +17,29 @@ export function useUpdateProductPrice() {
     }) => {
       console.log('Updating product price:', productId, newBuyerPrice);
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('products')
         .update({
           buyer_price: newBuyerPrice,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', productId);
+        .eq('id', productId)
+        .select();
 
       if (error) {
         console.error('Error updating product price:', error);
         throw error;
       }
 
-      return { success: true };
+      console.log('Product price updated successfully:', data);
+      return data;
     },
     onSuccess: () => {
+      // Invalidate multiple query keys to ensure UI updates
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['products', undefined] });
+      queryClient.refetchQueries({ queryKey: ['products'] });
+      
       toast({
         title: "Berhasil",
         description: "Harga produk berhasil diupdate",
@@ -62,27 +68,35 @@ export function useBatchUpdatePrices() {
     }) => {
       console.log('Batch updating product prices:', updates.length, 'products');
 
-      const promises = updates.map(update =>
-        supabase
+      const promises = updates.map(async (update) => {
+        const { data, error } = await supabase
           .from('products')
           .update({
             buyer_price: update.buyer_price,
             updated_at: new Date().toISOString(),
           })
           .eq('id', update.id)
-      );
+          .select();
+
+        if (error) {
+          console.error('Error updating product:', update.id, error);
+          throw error;
+        }
+
+        return data;
+      });
 
       const results = await Promise.all(promises);
+      console.log('Batch update completed:', results);
       
-      const errors = results.filter(result => result.error);
-      if (errors.length > 0) {
-        throw new Error(`Failed to update ${errors.length} products`);
-      }
-
       return { success: true, updated: updates.length };
     },
     onSuccess: (data) => {
+      // Invalidate multiple query keys to ensure UI updates
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['products', undefined] });
+      queryClient.refetchQueries({ queryKey: ['products'] });
+      
       toast({
         title: "Berhasil",
         description: `${data.updated} produk berhasil diupdate`,

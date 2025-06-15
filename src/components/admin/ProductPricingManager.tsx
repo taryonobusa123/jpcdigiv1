@@ -42,6 +42,7 @@ export default function ProductPricingManager({ products, isLoading }: ProductPr
   };
 
   const calculateMargin = (sellerPrice: number, buyerPrice: number) => {
+    if (sellerPrice <= 0) return '0';
     return ((buyerPrice - sellerPrice) / sellerPrice * 100).toFixed(1);
   };
 
@@ -52,11 +53,16 @@ export default function ProductPricingManager({ products, isLoading }: ProductPr
 
   const handleEditSave = async () => {
     if (editingProduct && editPrice > 0) {
-      await updateProductPrice.mutateAsync({
-        productId: editingProduct,
-        newBuyerPrice: editPrice,
-      });
-      setEditingProduct(null);
+      try {
+        await updateProductPrice.mutateAsync({
+          productId: editingProduct,
+          newBuyerPrice: editPrice,
+        });
+        setEditingProduct(null);
+        setEditPrice(0);
+      } catch (error) {
+        console.error('Failed to update price:', error);
+      }
     }
   };
 
@@ -75,6 +81,14 @@ export default function ProductPricingManager({ products, isLoading }: ProductPr
     setSelectedProducts(newSelected);
   };
 
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedProducts(new Set(products.map(p => p.id)));
+    } else {
+      setSelectedProducts(new Set());
+    }
+  };
+
   const handleBatchMarginUpdate = async () => {
     if (selectedProducts.size === 0) return;
 
@@ -89,8 +103,12 @@ export default function ProductPricingManager({ products, isLoading }: ProductPr
       };
     }).filter(Boolean) as Array<{ id: string; buyer_price: number }>;
 
-    await batchUpdatePrices.mutateAsync({ updates });
-    setSelectedProducts(new Set());
+    try {
+      await batchUpdatePrices.mutateAsync({ updates });
+      setSelectedProducts(new Set());
+    } catch (error) {
+      console.error('Failed to batch update prices:', error);
+    }
   };
 
   if (isLoading) {
@@ -138,7 +156,7 @@ export default function ProductPricingManager({ products, isLoading }: ProductPr
               disabled={selectedProducts.size === 0 || batchUpdatePrices.isPending}
               variant="outline"
             >
-              Update {selectedProducts.size} Produk Terpilih
+              {batchUpdatePrices.isPending ? 'Updating...' : `Update ${selectedProducts.size} Produk Terpilih`}
             </Button>
             {selectedProducts.size > 0 && (
               <Button
@@ -160,13 +178,7 @@ export default function ProductPricingManager({ products, isLoading }: ProductPr
                 <TableHead className="w-12">
                   <input
                     type="checkbox"
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedProducts(new Set(products.map(p => p.id)));
-                      } else {
-                        setSelectedProducts(new Set());
-                      }
-                    }}
+                    onChange={(e) => handleSelectAll(e.target.checked)}
                     checked={selectedProducts.size === products.length && products.length > 0}
                   />
                 </TableHead>
