@@ -18,7 +18,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { whatsapp_number, otp_code, user_id } = await req.json();
+    const { whatsapp_number, otp_code } = await req.json();
     
     if (!whatsapp_number || !otp_code) {
       return new Response(
@@ -52,18 +52,76 @@ const handler = async (req: Request): Promise<Response> => {
       .update({ is_used: true })
       .eq('id', otpData.id);
 
-    // Update user profile verification status
-    if (user_id) {
+    // Check if user profile exists with this WhatsApp number
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('whatsapp_number', whatsapp_number)
+      .maybeSingle();
+
+    let userId = existingProfile?.id;
+
+    if (!existingProfile) {
+      // Create new user account
+      const tempEmail = `${whatsapp_number.replace('+', '')}@temp.whatsapp.local`;
+      const tempPassword = Math.random().toString(36).substring(2, 15);
+
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: tempEmail,
+        password: tempPassword,
+        user_metadata: {
+          whatsapp_number: whatsapp_number,
+          whatsapp_verified: true
+        }
+      });
+
+      if (authError) {
+        console.error('Auth creation error:', authError);
+        return new Response(
+          JSON.stringify({ error: 'Gagal membuat akun' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      userId = authData.user.id;
+
+      // Update profile with verification status
+      await supabase
+        .from('profiles')
+        .update({ 
+          is_whatsapp_verified: true,
+          whatsapp_number: whatsapp_number
+        })
+        .eq('id', userId);
+    } else {
+      // Update existing profile verification status
       await supabase
         .from('profiles')
         .update({ is_whatsapp_verified: true })
-        .eq('id', user_id);
+        .eq('id', userId);
+    }
+
+    // Generate login token for the user
+    const { data: tokenData, error: tokenError } = await supabase.auth.admin.generateLink({
+      type: 'magiclink',
+      email: existingProfile?.email || `${whatsapp_number.replace('+', '')}@temp.whatsapp.local`,
+    });
+
+    if (tokenError) {
+      console.error('Token generation error:', tokenError);
+      return new Response(
+        JSON.stringify({ error: 'Gagal membuat sesi login' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Verifikasi WhatsApp berhasil' 
+        message: 'Verifikasi WhatsApp berhasil',
+        access_token: tokenData.properties?.access_token,
+        refresh_token: tokenData.properties?.refresh_token,
+        user_id: userId
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

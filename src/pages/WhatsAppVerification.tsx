@@ -4,12 +4,10 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import WhatsAppVerification from '@/components/WhatsAppVerification';
-import { useAuth } from '@/hooks/useAuth';
 
 const WhatsAppVerificationPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user, refreshProfile } = useAuth();
   const [isVerified, setIsVerified] = useState(false);
   
   const whatsappNumber = searchParams.get('number') || '';
@@ -22,7 +20,6 @@ const WhatsAppVerificationPage = () => {
 
   const handleVerificationComplete = async () => {
     setIsVerified(true);
-    await refreshProfile();
     
     // Redirect to home after 2 seconds
     setTimeout(() => {
@@ -37,7 +34,7 @@ const WhatsAppVerificationPage = () => {
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
             <CheckCircle className="w-10 h-10 text-green-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-800">Verifikasi Berhasil!</h2>
+          <h2 className="text-2xl font-bold text-gray-800">Login Berhasil!</h2>
           <p className="text-gray-600">WhatsApp Anda telah berhasil diverifikasi</p>
           <p className="text-sm text-gray-500">Mengalihkan ke halaman utama...</p>
         </div>
