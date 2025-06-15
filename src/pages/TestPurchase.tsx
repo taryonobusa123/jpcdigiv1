@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useTestPurchase, useDigiflazzTransactions } from '@/hooks/useTestPurchase';
+import { useSyncProducts } from '@/hooks/useSyncProducts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function TestPurchase() {
@@ -20,6 +21,7 @@ export default function TestPurchase() {
   const { data: products, isLoading: productsLoading } = useProducts(selectedCategory === 'all' ? undefined : selectedCategory);
   const { data: transactions, isLoading: transactionsLoading } = useDigiflazzTransactions();
   const testPurchase = useTestPurchase();
+  const syncProducts = useSyncProducts();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -88,16 +90,26 @@ export default function TestPurchase() {
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center mb-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center">
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate('/admin')}
+              className="mr-4"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Admin
+            </Button>
+            <h1 className="text-3xl font-bold text-gray-800">Test Purchase</h1>
+          </div>
           <Button 
-            variant="ghost" 
-            onClick={() => navigate('/admin')}
-            className="mr-4"
+            onClick={() => syncProducts.mutate()}
+            disabled={syncProducts.isPending}
+            variant="outline"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Admin
+            <RefreshCw className={`w-4 h-4 mr-2 ${syncProducts.isPending ? 'animate-spin' : ''}`} />
+            {syncProducts.isPending ? 'Syncing...' : 'Sync Products'}
           </Button>
-          <h1 className="text-3xl font-bold text-gray-800">Test Purchase</h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -136,12 +148,16 @@ export default function TestPurchase() {
                   <SelectContent>
                     {productsLoading ? (
                       <SelectItem value="loading" disabled>Loading...</SelectItem>
-                    ) : (
+                    ) : products && products.length > 0 ? (
                       products?.map((product) => (
                         <SelectItem key={product.sku} value={product.sku}>
                           {product.product_name} - {formatCurrency(product.buyer_price)}
                         </SelectItem>
                       ))
+                    ) : (
+                      <SelectItem value="no-products" disabled>
+                        No products found. Click "Sync Products" to load from Digiflazz
+                      </SelectItem>
                     )}
                   </SelectContent>
                 </Select>
