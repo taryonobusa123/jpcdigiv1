@@ -68,38 +68,69 @@ export function useBatchUpdatePrices() {
     }) => {
       console.log('Batch updating product prices:', updates.length, 'products');
 
-      const promises = updates.map(async (update) => {
-        const { data, error } = await supabase
-          .from('products')
-          .update({
-            buyer_price: update.buyer_price,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', update.id)
-          .select();
+      // Use Promise.allSettled for better error handling and to continue with successful updates
+      const results = await Promise.allSettled(
+        updates.map(async (update) => {
+          console.log('Updating product:', update.id, 'with price:', update.buyer_price);
+          
+          const { data, error } = await supabase
+            .from('products')
+            .update({
+              buyer_price: update.buyer_price,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', update.id)
+            .select()
+            .single();
 
-        if (error) {
-          console.error('Error updating product:', update.id, error);
-          throw error;
-        }
+          if (error) {
+            console.error('Error updating product:', update.id, error);
+            throw error;
+          }
 
-        return data;
+          console.log('Successfully updated product:', update.id, data);
+          return data;
+        })
+      );
+
+      const successful = results.filter(result => result.status === 'fulfilled');
+      const failed = results.filter(result => result.status === 'rejected');
+
+      console.log('Batch update results:', {
+        total: updates.length,
+        successful: successful.length,
+        failed: failed.length
       });
 
-      const results = await Promise.all(promises);
-      console.log('Batch update completed:', results);
-      
-      return { success: true, updated: updates.length };
+      if (failed.length > 0) {
+        console.error('Failed updates:', failed);
+      }
+
+      return { 
+        success: true, 
+        updated: successful.length, 
+        failed: failed.length,
+        total: updates.length 
+      };
     },
     onSuccess: (data) => {
-      // Invalidate multiple query keys to ensure UI updates
+      console.log('Batch update completed, invalidating queries...');
+      
+      // Force complete refresh of products data
+      queryClient.removeQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      queryClient.invalidateQueries({ queryKey: ['products', undefined] });
-      queryClient.refetchQueries({ queryKey: ['products'] });
+      
+      // Wait a bit then refetch to ensure fresh data
+      setTimeout(() => {
+        queryClient.refetchQueries({ queryKey: ['products'] });
+      }, 100);
       
       toast({
         title: "Berhasil",
-        description: `${data.updated} produk berhasil diupdate`,
+        description: data.failed > 0 
+          ? `${data.updated} produk berhasil diupdate, ${data.failed} gagal`
+          : `${data.updated} produk berhasil diupdate`,
+        variant: data.failed > 0 ? "destructive" : "default",
       });
     },
     onError: (error) => {

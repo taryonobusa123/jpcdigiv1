@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -29,9 +29,15 @@ export default function ProductPricingManager({ products, isLoading }: ProductPr
   const [editPrice, setEditPrice] = useState<number>(0);
   const [marginPercentage, setMarginPercentage] = useState<number>(10);
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
+  const [displayProducts, setDisplayProducts] = useState<Product[]>([]);
 
   const updateProductPrice = useUpdateProductPrice();
   const batchUpdatePrices = useBatchUpdatePrices();
+
+  // Update display products when props change
+  useEffect(() => {
+    setDisplayProducts(products || []);
+  }, [products]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -58,6 +64,16 @@ export default function ProductPricingManager({ products, isLoading }: ProductPr
           productId: editingProduct,
           newBuyerPrice: editPrice,
         });
+        
+        // Update local state immediately for better UX
+        setDisplayProducts(prev => 
+          prev.map(product => 
+            product.id === editingProduct 
+              ? { ...product, buyer_price: editPrice }
+              : product
+          )
+        );
+        
         setEditingProduct(null);
         setEditPrice(0);
       } catch (error) {
@@ -83,7 +99,7 @@ export default function ProductPricingManager({ products, isLoading }: ProductPr
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedProducts(new Set(products.map(p => p.id)));
+      setSelectedProducts(new Set(displayProducts.map(p => p.id)));
     } else {
       setSelectedProducts(new Set());
     }
@@ -93,7 +109,7 @@ export default function ProductPricingManager({ products, isLoading }: ProductPr
     if (selectedProducts.size === 0) return;
 
     const updates = Array.from(selectedProducts).map(productId => {
-      const product = products.find(p => p.id === productId);
+      const product = displayProducts.find(p => p.id === productId);
       if (!product) return null;
 
       const newBuyerPrice = product.seller_price * (1 + marginPercentage / 100);
@@ -103,8 +119,19 @@ export default function ProductPricingManager({ products, isLoading }: ProductPr
       };
     }).filter(Boolean) as Array<{ id: string; buyer_price: number }>;
 
+    console.log('Preparing batch update:', updates);
+
     try {
       await batchUpdatePrices.mutateAsync({ updates });
+      
+      // Update local state immediately for better UX
+      setDisplayProducts(prev => 
+        prev.map(product => {
+          const update = updates.find(u => u.id === product.id);
+          return update ? { ...product, buyer_price: update.buyer_price } : product;
+        })
+      );
+      
       setSelectedProducts(new Set());
     } catch (error) {
       console.error('Failed to batch update prices:', error);
@@ -179,7 +206,7 @@ export default function ProductPricingManager({ products, isLoading }: ProductPr
                   <input
                     type="checkbox"
                     onChange={(e) => handleSelectAll(e.target.checked)}
-                    checked={selectedProducts.size === products.length && products.length > 0}
+                    checked={selectedProducts.size === displayProducts.length && displayProducts.length > 0}
                   />
                 </TableHead>
                 <TableHead>SKU</TableHead>
@@ -194,7 +221,7 @@ export default function ProductPricingManager({ products, isLoading }: ProductPr
               </TableRow>
             </TableHeader>
             <TableBody>
-              {products?.slice(0, 100).map((product) => (
+              {displayProducts?.slice(0, 100).map((product) => (
                 <TableRow key={product.id}>
                   <TableCell>
                     <input
@@ -271,9 +298,9 @@ export default function ProductPricingManager({ products, isLoading }: ProductPr
           </Table>
         </div>
 
-        {products && products.length > 100 && (
+        {displayProducts && displayProducts.length > 100 && (
           <div className="mt-4 text-sm text-gray-500 text-center">
-            Menampilkan 100 produk pertama dari {products.length} total produk
+            Menampilkan 100 produk pertama dari {displayProducts.length} total produk
           </div>
         )}
       </CardContent>
