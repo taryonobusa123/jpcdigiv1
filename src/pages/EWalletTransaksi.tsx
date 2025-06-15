@@ -1,9 +1,25 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Wallet, History } from "lucide-react";
 import { useProducts } from "@/hooks/useProducts";
 import EwalletBrandGrid from "@/components/EwalletBrandGrid";
 import { Badge } from "@/components/ui/badge";
+import ChooseEwalletModal from "@/components/ChooseEwalletModal";
+import EwalletTransactionModal from "@/components/EwalletTransactionModal";
+import { EWALLET_BRAND_LOGOS } from "@/components/ewallet-brand-logos";
+
+// Dummy data (should come from backend profile/config in future)
+const DEMO_USER_EWALLETS = [
+  { name: "ShopeePay", logo: EWALLET_BRAND_LOGOS["shopeepay"], masked: "J*************", balance: 0, gratis: true }
+];
+const DEMO_EWALLET_LIST = [
+  { name: "ShopeePay", logo: EWALLET_BRAND_LOGOS["shopeepay"], gratis: true },
+  { name: "GoPay", logo: EWALLET_BRAND_LOGOS["gopay"] },
+  { name: "OVO", logo: EWALLET_BRAND_LOGOS["ovo"] },
+  { name: "Dana", logo: EWALLET_BRAND_LOGOS["dana"], gratis: true },
+  { name: "LinkAja", logo: EWALLET_BRAND_LOGOS["linkaja"] },
+  { name: "i.Saku", logo: EWALLET_BRAND_LOGOS["isaku"] }
+];
 
 const groupByBrand = (products: any[]) => {
   const brandGroups: { [brand: string]: any[] } = {};
@@ -19,6 +35,11 @@ const groupByBrand = (products: any[]) => {
 
 const EWalletTransaksi = () => {
   const { data: products, isLoading, isError } = useProducts();
+  const [chooseModalOpen, setChooseModalOpen] = useState(false);
+  const [transactionModalOpen, setTransactionModalOpen] = useState(false);
+  const [selectedBrand, setSelectedBrand] = useState<any>(null);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+
   const ewalletProducts =
     products?.filter(
       (item) =>
@@ -28,6 +49,35 @@ const EWalletTransaksi = () => {
     ) || [];
   const brandGroups = groupByBrand(ewalletProducts);
 
+  // Fitur: ketika pilih ewallet brand dari modal, buka modal produk nominal
+  function handleSelectBrand(brand: any) {
+    if (brand.name === "ShopeePay" && brandGroups.ShopeePay) {
+      setSelectedBrand("ShopeePay");
+      setTransactionModalOpen(true);
+    }
+    else if (brand.name === "GoPay" && brandGroups.GoPay) {
+      setSelectedBrand("GoPay");
+      setTransactionModalOpen(true);
+    }
+    else if (brand.name === "OVO" && brandGroups.OVO) {
+      setSelectedBrand("OVO");
+      setTransactionModalOpen(true);
+    }
+    else if (brand.name === "Dana" && brandGroups.Dana) {
+      setSelectedBrand("Dana");
+      setTransactionModalOpen(true);
+    }
+    else if (brand.name === "LinkAja" && brandGroups.LinkAja) {
+      setSelectedBrand("LinkAja");
+      setTransactionModalOpen(true);
+    }
+    else if (brand.name === "i.Saku" && brandGroups["i.Saku"]) {
+      setSelectedBrand("i.Saku");
+      setTransactionModalOpen(true);
+    }
+    // Fallback tampilkan error atau toast di sini jika brand tidak ditemukan
+  }
+
   // Dummy saldo, replace dengan data asli bila ada
   const saldo = 215000;
   const noRek = "8501 1423 2268 0010";
@@ -35,6 +85,15 @@ const EWalletTransaksi = () => {
   return (
     <div className="min-h-screen bg-[#fef6ee] pb-24 md:pb-8">
       <div className="max-w-md mx-auto px-2 md:px-0">
+        {/* Tombol Pilih E-Wallet */}
+        <div className="flex justify-end pt-4 pb-2">
+          <button
+            className="bg-orange-500 text-white rounded-full px-5 py-2 font-semibold shadow hover:bg-orange-600 transition"
+            onClick={()=>setChooseModalOpen(true)}
+          >
+            Pilih E-Wallet
+          </button>
+        </div>
         {/* Header Profile dan Saldo */}
         <div className="pt-6 pb-0 flex flex-col gap-4">
           {/* Mini profile */}
@@ -115,6 +174,23 @@ const EWalletTransaksi = () => {
           Semua layanan transaksi dompet digital didukung 24 jam & aman.
         </div>
       </div>
+      {/* Modal Pilih E-Wallet */}
+      <ChooseEwalletModal
+        open={chooseModalOpen}
+        onOpenChange={setChooseModalOpen}
+        ewalletList={DEMO_EWALLET_LIST}
+        userEwallets={DEMO_USER_EWALLETS}
+        onSelectBrand={(brand) => {
+          setChooseModalOpen(false);
+          setTimeout(() => handleSelectBrand(brand), 250);
+        }}
+      />
+      {/* Modal Transaksi: buka grid brand produk brandGroups[selectedBrand] */}
+      {selectedBrand && brandGroups[selectedBrand] && (
+        <EwalletBrandGrid
+          brandGroups={{ [selectedBrand]: brandGroups[selectedBrand] }}
+        />
+      )}
     </div>
   );
 };
