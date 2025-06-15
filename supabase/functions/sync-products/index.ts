@@ -20,12 +20,47 @@ serve(async (req) => {
 
     console.log('Starting product sync from Digiflazz...');
 
+    // Check if credentials are available
+    const username = Deno.env.get('DIGIFLAZZ_USERNAME');
+    const apiKey = Deno.env.get('DIGIFLAZZ_API_KEY');
+    
+    if (!username || !apiKey) {
+      console.error('Missing Digiflazz credentials');
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'Digiflazz credentials not configured. Please check DIGIFLAZZ_USERNAME and DIGIFLAZZ_API_KEY secrets.' 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Get products from Digiflazz
-    const products = await getDigiflazzProducts();
+    let products;
+    try {
+      products = await getDigiflazzProducts();
+    } catch (error) {
+      console.error('Failed to fetch from Digiflazz:', error);
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: `Failed to connect to Digiflazz API: ${error.message}`,
+        details: 'Please check your Digiflazz credentials and try again.'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     
     if (!products || !Array.isArray(products)) {
       console.error('No products received from Digiflazz or invalid format');
-      throw new Error('Failed to fetch products from Digiflazz');
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'No products received from Digiflazz or invalid response format',
+        received_data: products ? 'Invalid format' : 'No data'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     console.log(`Received ${products.length} products from Digiflazz`);
@@ -40,10 +75,23 @@ serve(async (req) => {
 
     console.log(`Filtered to ${filteredProducts.length} relevant active products`);
 
+    if (filteredProducts.length === 0) {
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'No active products found in relevant categories',
+        total_received: products.length,
+        categories_checked: relevantCategories
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Process products in batches
     const batchSize = 50;
     let syncedCount = 0;
     let errorCount = 0;
+    const errors = [];
     
     for (let i = 0; i < filteredProducts.length; i += batchSize) {
       const batch = filteredProducts.slice(i, i + batchSize);
@@ -74,6 +122,7 @@ serve(async (req) => {
               end_cut_off: product.end_cut_off || '23:59',
               description: product.desc || product.product_name,
               is_active: true,
+              updated_at: new Date().toISOString(),
             }, {
               onConflict: 'sku'
             });
@@ -81,13 +130,17 @@ serve(async (req) => {
           if (error) {
             console.error('Error upserting product:', product.buyer_sku_code, error.message);
             errorCount++;
+            errors.push(`${product.buyer_sku_code}: ${error.message}`);
           } else {
             syncedCount++;
-            console.log(`Synced: ${product.product_name} (${product.buyer_sku_code})`);
+            if (syncedCount % 10 === 0) {
+              console.log(`Progress: ${syncedCount} products synced...`);
+            }
           }
         } catch (err) {
           console.error('Error processing product:', product.buyer_sku_code, err);
           errorCount++;
+          errors.push(`${product.buyer_sku_code}: ${err.message}`);
         }
       }
     }
@@ -99,7 +152,9 @@ serve(async (req) => {
       synced_count: syncedCount,
       error_count: errorCount,
       total_products: filteredProducts.length,
-      total_received: products.length
+      total_received: products.length,
+      errors: errorCount > 0 ? errors.slice(0, 10) : [], // Show first 10 errors
+      message: `Successfully synced ${syncedCount} products from Digiflazz${errorCount > 0 ? ` with ${errorCount} errors` : ''}`
     }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -109,7 +164,8 @@ serve(async (req) => {
     console.error('Product sync error:', error);
     return new Response(JSON.stringify({ 
       success: false,
-      error: error.message 
+      error: error.message,
+      stack: error.stack
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -135,32 +191,54 @@ async function getDigiflazzProducts() {
   };
 
   console.log('Calling Digiflazz price-list API...');
+  console.log('Username:', username);
+  console.log('API URL: https://api.digiflazz.com/v1/price-list');
 
   try {
     const response = await fetch('https://api.digiflazz.com/v1/price-list', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'User-Agent': 'Supabase-Edge-Function/1.0',
       },
       body: JSON.stringify(payload),
     });
 
+    console.log('Response status:', response.status);
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      console.error('HTTP error response:', errorText);
+      throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
     }
 
     const result = await response.json();
-    console.log('Digiflazz API response status:', result.success ? 'success' : 'failed');
+    console.log('Digiflazz API response received');
+    console.log('Response success field:', result.success);
     
-    if (!result.success) {
-      console.error('Digiflazz API error details:', result);
-      throw new Error(result.message || 'Failed to fetch products from Digiflazz');
+    if (result.success === false) {
+      console.error('Digiflazz API returned success: false');
+      console.error('Error message:', result.message);
+      console.error('Full response:', JSON.stringify(result, null, 2));
+      throw new Error(result.message || 'Digiflazz API returned success: false');
+    }
+
+    if (!result.data || !Array.isArray(result.data)) {
+      console.error('Invalid data format from Digiflazz');
+      console.error('Data type:', typeof result.data);
+      console.error('Is array:', Array.isArray(result.data));
+      throw new Error('Invalid response format: data is not an array');
     }
     
+    console.log(`Successfully received ${result.data.length} products from Digiflazz`);
     return result.data;
   } catch (error) {
     console.error('Error calling Digiflazz API:', error);
-    throw new Error(`Failed to connect to Digiflazz API: ${error.message}`);
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error('Network error: Unable to connect to Digiflazz API. Please check your internet connection.');
+    }
+    throw error;
   }
 }
 
@@ -185,13 +263,20 @@ function normalizeBrand(brand: string): string {
     'TELKOMSEL': 'telkomsel',
     'INDOSAT': 'indosat', 
     'XL AXIATA': 'xl',
+    'XL': 'xl',
     'TRI': 'tri',
     'SMARTFREN': 'smartfren',
     'AXIS': 'axis',
     'PLN': 'pln',
+    'DANA': 'dana',
+    'GO PAY': 'gopay',
+    'GOPAY': 'gopay',
+    'OVO': 'ovo',
+    'FREE FIRE': 'freefire',
+    'MOBILE LEGENDS': 'mobilelegends',
   };
   
-  return brandMap[brand.toUpperCase()] || brand.toLowerCase();
+  return brandMap[brand.toUpperCase()] || brand.toLowerCase().replace(/\s+/g, '');
 }
 
 function getMarginByCategory(category: string): number {
