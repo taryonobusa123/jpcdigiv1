@@ -32,13 +32,27 @@ export function useUpdateProductPrice() {
       }
 
       console.log('Product price updated successfully:', data);
-      return data;
+      return data[0];
     },
-    onSuccess: () => {
-      // Invalidate multiple query keys to ensure UI updates
+    onSuccess: (updatedProduct) => {
+      // Force invalidate and refetch all product queries
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      queryClient.invalidateQueries({ queryKey: ['products', undefined] });
-      queryClient.refetchQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['products', 'all'] });
+      
+      // Update the cache immediately with the new data
+      queryClient.setQueryData(['products', 'all'], (oldData: any) => {
+        if (oldData) {
+          return oldData.map((product: any) => 
+            product.id === updatedProduct.id ? updatedProduct : product
+          );
+        }
+        return oldData;
+      });
+      
+      // Force a refetch after a short delay to ensure fresh data
+      setTimeout(() => {
+        queryClient.refetchQueries({ queryKey: ['products'] });
+      }, 100);
       
       toast({
         title: "Berhasil",
@@ -94,7 +108,7 @@ export function useBatchUpdatePrices() {
 
       console.log('Valid updates:', validUpdates.length, 'Invalid:', invalidIds.length);
 
-      // Use Promise.allSettled for better error handling and to continue with successful updates
+      // Use Promise.allSettled for better error handling
       const results = await Promise.allSettled(
         validUpdates.map(async (update) => {
           console.log('Updating product:', update.id, 'with price:', update.buyer_price);
@@ -114,12 +128,15 @@ export function useBatchUpdatePrices() {
           }
 
           console.log('Successfully updated product:', update.id, data);
-          return data;
+          return data[0];
         })
       );
 
       const successful = results.filter(result => result.status === 'fulfilled');
       const failed = results.filter(result => result.status === 'rejected');
+      const successfulProducts = successful.map(result => 
+        result.status === 'fulfilled' ? result.value : null
+      ).filter(Boolean);
 
       console.log('Batch update results:', {
         total: updates.length,
@@ -138,7 +155,8 @@ export function useBatchUpdatePrices() {
         updated: successful.length, 
         failed: failed.length,
         total: updates.length,
-        invalid: invalidIds.length
+        invalid: invalidIds.length,
+        updatedProducts: successfulProducts
       };
     },
     onSuccess: (data) => {
@@ -147,6 +165,19 @@ export function useBatchUpdatePrices() {
       // Force complete refresh of products data
       queryClient.removeQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      
+      // Update cache with new data if available
+      if (data.updatedProducts && data.updatedProducts.length > 0) {
+        queryClient.setQueryData(['products', 'all'], (oldData: any) => {
+          if (oldData) {
+            return oldData.map((product: any) => {
+              const updatedProduct = data.updatedProducts.find((p: any) => p.id === product.id);
+              return updatedProduct || product;
+            });
+          }
+          return oldData;
+        });
+      }
       
       // Wait a bit then refetch to ensure fresh data
       setTimeout(() => {

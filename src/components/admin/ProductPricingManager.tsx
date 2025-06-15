@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUpdateProductPrice, useBatchUpdatePrices } from '@/hooks/useProductPricing';
@@ -28,19 +29,11 @@ export default function ProductPricingManager() {
   const [editPrice, setEditPrice] = useState<number>(0);
   const [marginPercentage, setMarginPercentage] = useState<number>(10);
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
-  const [displayProducts, setDisplayProducts] = useState<Product[]>([]);
 
-  // Use real Supabase data instead of props
+  // Use real Supabase data
   const { data: products, isLoading, refetch } = useAllProducts();
   const updateProductPrice = useUpdateProductPrice();
   const batchUpdatePrices = useBatchUpdatePrices();
-
-  // Update display products when data changes
-  useEffect(() => {
-    if (products) {
-      setDisplayProducts(products);
-    }
-  }, [products]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -68,17 +61,13 @@ export default function ProductPricingManager() {
           newBuyerPrice: editPrice,
         });
         
-        // Update local state immediately for better UX
-        setDisplayProducts(prev => 
-          prev.map(product => 
-            product.id === editingProduct 
-              ? { ...product, buyer_price: editPrice }
-              : product
-          )
-        );
-        
         setEditingProduct(null);
         setEditPrice(0);
+        
+        // Force refresh after successful update
+        setTimeout(() => {
+          refetch();
+        }, 200);
       } catch (error) {
         console.error('Failed to update price:', error);
       }
@@ -101,18 +90,18 @@ export default function ProductPricingManager() {
   };
 
   const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedProducts(new Set(displayProducts.map(p => p.id)));
+    if (checked && products) {
+      setSelectedProducts(new Set(products.map(p => p.id)));
     } else {
       setSelectedProducts(new Set());
     }
   };
 
   const handleBatchMarginUpdate = async () => {
-    if (selectedProducts.size === 0) return;
+    if (selectedProducts.size === 0 || !products) return;
 
     const updates = Array.from(selectedProducts).map(productId => {
-      const product = displayProducts.find(p => p.id === productId);
+      const product = products.find(p => p.id === productId);
       if (!product) return null;
 
       const newBuyerPrice = product.seller_price * (1 + marginPercentage / 100);
@@ -127,15 +116,12 @@ export default function ProductPricingManager() {
     try {
       await batchUpdatePrices.mutateAsync({ updates });
       
-      // Update local state immediately for better UX
-      setDisplayProducts(prev => 
-        prev.map(product => {
-          const update = updates.find(u => u.id === product.id);
-          return update ? { ...product, buyer_price: update.buyer_price } : product;
-        })
-      );
-      
       setSelectedProducts(new Set());
+      
+      // Force refresh after successful batch update
+      setTimeout(() => {
+        refetch();
+      }, 300);
     } catch (error) {
       console.error('Failed to batch update prices:', error);
     }
@@ -168,7 +154,7 @@ export default function ProductPricingManager() {
             <ProductForm onSuccess={handleRefresh} />
           </div>
           <div className="text-sm text-gray-600">
-            Total: {displayProducts?.length || 0} produk
+            Total: {products?.length || 0} produk
           </div>
         </div>
 
@@ -182,7 +168,7 @@ export default function ProductPricingManager() {
         />
 
         <ProductPricingTable
-          products={displayProducts || []}
+          products={products || []}
           selectedProducts={selectedProducts}
           onProductSelect={handleProductSelect}
           onSelectAll={handleSelectAll}
@@ -197,9 +183,9 @@ export default function ProductPricingManager() {
           calculateMargin={calculateMargin}
         />
 
-        {displayProducts && displayProducts.length > 100 && (
+        {products && products.length > 100 && (
           <div className="mt-4 text-sm text-gray-500 text-center">
-            Menampilkan 100 produk pertama dari {displayProducts.length} total produk
+            Menampilkan 100 produk pertama dari {products.length} total produk
           </div>
         )}
       </CardContent>
