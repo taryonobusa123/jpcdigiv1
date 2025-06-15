@@ -1,23 +1,26 @@
-
 import React from 'react';
 import { 
   Zap, 
   Smartphone, 
+  Droplets,
   ArrowUpRight, 
   Wallet, 
   Gamepad2, 
   Shield,
   Plus,
-  CreditCard
+  CreditCard,
+  Wifi
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const QuickActions = () => {
   const actions = [
-    { icon: Zap, label: 'Bayar Tagihan', color: 'bg-yellow-500', path: '/pay-bills' },
-    { icon: Smartphone, label: 'Pulsa/Data', color: 'bg-green-500', path: '/topup' },
+    { icon: Smartphone, label: 'Pulsa', color: 'bg-green-500', path: '/pulsa' },
+    { icon: Wifi, label: 'Data Packages', color: 'bg-purple-500', path: '/data-packages' },
+    { icon: Zap, label: 'PLN Token', color: 'bg-yellow-500', path: '/pln-token' },
+    { icon: Droplets, label: 'PDAM', color: 'bg-blue-500', path: '/pdam' },
+    { icon: Wallet, label: 'E-Wallet', color: 'bg-fuchsia-600', path: '/ewallet-transaksi' },
     { icon: ArrowUpRight, label: 'Transfer', color: 'bg-blue-500', path: '/transfer' },
-    { icon: Wallet, label: 'E-Wallet', color: 'bg-purple-500', path: '/ewallet' },
     { icon: Gamepad2, label: 'Gaming', color: 'bg-indigo-500', path: '/gaming' },
     { icon: Shield, label: 'BPJS', color: 'bg-red-500', path: '/insurance' },
     { icon: Plus, label: 'Top Up', color: 'bg-orange-500', path: '/wallet' },
