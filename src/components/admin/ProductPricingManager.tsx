@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUpdateProductPrice, useBatchUpdatePrices } from '@/hooks/useProductPricing';
@@ -67,7 +66,7 @@ export default function ProductPricingManager() {
         // Force refresh after successful update
         setTimeout(() => {
           refetch();
-        }, 200);
+        }, 500);
       } catch (error) {
         console.error('Failed to update price:', error);
       }
@@ -121,7 +120,7 @@ export default function ProductPricingManager() {
       // Force refresh after successful batch update
       setTimeout(() => {
         refetch();
-      }, 300);
+      }, 500);
     } catch (error) {
       console.error('Failed to batch update prices:', error);
     }
@@ -130,6 +129,15 @@ export default function ProductPricingManager() {
   const handleRefresh = () => {
     refetch();
   };
+
+  // Auto-refresh every 30 seconds to keep data fresh
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refetch();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [refetch]);
 
   if (isLoading) {
     return (
