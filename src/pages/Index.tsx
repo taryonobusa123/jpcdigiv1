@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Bell,
   Eye,
@@ -16,7 +16,7 @@ import {
   User,
   ArrowRightLeft
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
 // Data menu dan promo tetap sama / static
@@ -24,37 +24,45 @@ const actionMenus = [
   {
     label: "Transfer",
     icon: Send,
-    isNew: true
+    isNew: true,
+    to: "/transfer"
   },
   {
     label: "Top Up & Tagihan",
     icon: ArrowRightLeft,
-    isNew: true
+    isNew: true,
+    to: "/pay-bills"
   },
   {
     label: "Top Up E-Wallet",
-    icon: Wallet
+    icon: Wallet,
+    isEwallet: true
   },
   {
     label: "Undang Teman",
-    icon: Users
+    icon: Users,
+    to: "/rewards"
   },
   {
     label: "Deposito",
-    icon: PiggyBank
+    icon: PiggyBank,
+    to: "/wallet"
   },
   {
     label: "Tarik Tunai",
-    icon: Download
+    icon: Download,
+    to: "/wallet"
   },
   {
     label: "SeaBank Pinjam",
     icon: BadgePercent,
-    isNew: true
+    isNew: true,
+    to: "/services"
   },
   {
     label: "Lihat Semua",
-    icon: MoreHorizontal
+    icon: MoreHorizontal,
+    to: "/services"
   }
 ];
 
@@ -79,8 +87,25 @@ const flashDeals = [
   }
 ];
 
+const EWALLET_LIST = [
+  { name: "ShopeePay", logo: "/ewallet/shopeepay.png", gratis: true },
+  { name: "GoPay", logo: "/ewallet/gopay.png" },
+  { name: "OVO", logo: "/ewallet/ovo.png" },
+  { name: "Dana", logo: "/ewallet/dana.png", gratis: true },
+  { name: "LinkAja", logo: "/ewallet/linkaja.png" },
+  { name: "i.Saku", logo: "/ewallet/isaku.png" }
+];
+
+// Demo data e-wallet user
+const USER_EWALLETS = [
+  { name: "ShopeePay", logo: "/ewallet/shopeepay.png", masked: "J*************", balance: 0, gratis: true },
+  { name: "OVO", logo: "/ewallet/ovo.png", status: "hubungkan" }
+];
+
 export default function Index() {
   const { profile, loading } = useAuth();
+  const [showEwalletModal, setShowEwalletModal] = useState(false);
+  const navigate = useNavigate();
 
   // Data fallback jika tidak ada profile (misal belum login)
   const user = {
@@ -97,6 +122,15 @@ export default function Index() {
     notifikasi: 12, // Dummy, ganti jika ada notifikasi di table/profile
     limitPinjam: 7500000 // Dummy, hardcode
   };
+
+  // Handler klik menu
+  function handleMenuClick(menu: (typeof actionMenus)[number]) {
+    if (menu.isEwallet) {
+      setShowEwalletModal(true);
+    } else if (menu.to) {
+      navigate(menu.to);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#FBFBFB] pb-20">
@@ -177,7 +211,12 @@ export default function Index() {
         <div className="bg-white mt-5 rounded-2xl shadow p-4">
           <div className="grid grid-cols-4 gap-x-2 gap-y-5">
             {actionMenus.map((menu, idx) => (
-              <div key={idx} className="flex flex-col items-center gap-1">
+              <button
+                key={idx}
+                className="flex flex-col items-center gap-1 focus:outline-none active:scale-95 transition"
+                onClick={() => handleMenuClick(menu)}
+                type="button"
+              >
                 <div className="relative mb-1">
                   <div className="w-11 h-11 flex items-center justify-center rounded-full bg-orange-50 text-orange-500 text-2xl shadow-sm">
                     <menu.icon className="w-6 h-6" />
@@ -189,7 +228,7 @@ export default function Index() {
                   )}
                 </div>
                 <span className="text-xs text-gray-800 font-medium leading-tight text-center">{menu.label}</span>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -241,6 +280,49 @@ export default function Index() {
           </span>
         </div>
       </div>
+
+      {/* MODAL PILIH EWALLET */}
+      {showEwalletModal && (
+        <div className="fixed inset-0 z-[110] flex items-end md:items-center justify-center bg-black/25">
+          <div className="bg-white w-full rounded-t-3xl md:rounded-2xl max-w-md mx-auto pb-6 overflow-y-auto shadow-lg animate-in slide-in-from-bottom-10 duration-200">
+            <div className="flex items-center px-5 py-4 border-b justify-between">
+              <span className="font-bold text-lg">Pilih E-Wallet</span>
+              <button className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100" onClick={()=>setShowEwalletModal(false)}>
+                <span className="text-2xl">&times;</span>
+              </button>
+            </div>
+            <div className="px-5 pt-3">
+              <div className="mb-2">
+                <span className="block font-semibold text-[15px] mb-2">E-Wallet Saya</span>
+                <div className="flex gap-2">
+                  {USER_EWALLETS.map((w, ix) =>
+                    <div key={ix} className="flex-1">
+                      <div className="rounded-xl bg-gray-50 border border-gray-200 flex flex-col items-center justify-center py-4 px-1 text-center h-24 shadow">
+                        <img src={w.logo} className="w-9 h-9 mx-auto mb-1" alt={w.name} />
+                        <div className="text-sm font-bold">{w.masked || w.name}</div>
+                        {w.balance !== undefined && <div className="text-xs text-gray-500 mt-0.5">Rp {w.balance}</div>}
+                        {w.status === "hubungkan" && <div className="text-[13px] text-orange-600 font-bold mt-0.5">Hubungkan <ArrowRight className="w-3 h-3 inline" /></div>}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="mt-2">
+                <span className="block font-semibold text-[15px] mb-2">E-Wallet Lainnya</span>
+                <div className="grid grid-cols-3 gap-3">
+                  {EWALLET_LIST.map((e, ix) =>
+                    <div key={ix} className="flex flex-col items-center justify-center py-3 bg-gray-50 rounded-xl border relative">
+                      <img src={e.logo} className="w-9 h-9 mb-1" alt={e.name} />
+                      <span className="font-medium text-xs">{e.name}</span>
+                      {e.gratis && <span className="absolute -top-2 -right-2 text-[11px] bg-orange-500 text-white px-2 py-0.5 rounded-full font-bold">Gratis</span>}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Bottom Navigation */}
       <div className="fixed left-0 bottom-0 right-0 bg-white border-t border-gray-200 py-1.5 z-50 flex justify-around items-center shadow-md">
         <div className="flex flex-col items-center">
@@ -269,3 +351,4 @@ export default function Index() {
     </div>
   );
 }
+// ... End of file. Panjang file Index.tsx di atas 270 baris; sangat disarankan untuk segera direfactor menjadi beberapa komponen kecil.
