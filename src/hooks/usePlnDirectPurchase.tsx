@@ -59,25 +59,52 @@ export function usePlnDirectPurchase() {
         throw new Error('Gagal membuat transaksi');
       }
 
-      // Process transaction via edge function
-      const { data: result, error: processError } = await supabase.functions.invoke('purchase-pln-direct', {
-        body: { 
-          transaction_id: transaction.id,
-          ref_id,
-          customer_id: purchaseData.meter_number,
-          sku: purchaseData.sku,
-          price: purchaseData.price
+      console.log('Transaction created successfully:', transaction);
+
+      // Try to process transaction via edge function
+      try {
+        const { data: result, error: processError } = await supabase.functions.invoke('purchase-pln-direct', {
+          body: { 
+            transaction_id: transaction.id,
+            ref_id,
+            customer_id: purchaseData.meter_number,
+            sku: purchaseData.sku,
+            price: purchaseData.price
+          }
+        });
+
+        if (processError) {
+          console.error('PLN transaction processing error:', processError);
+          
+          // Update transaction status to failed
+          await supabase
+            .from('transactions')
+            .update({ 
+              status: 'failed',
+              message: 'Gagal memproses ke provider'
+            })
+            .eq('id', transaction.id);
+          
+          throw new Error('Gagal memproses transaksi ke provider');
         }
-      });
 
-      if (processError) {
-        console.error('PLN transaction processing error:', processError);
-        throw new Error('Gagal memproses transaksi');
+        console.log('PLN purchase result:', result);
+        return { transaction, result };
+        
+      } catch (functionError) {
+        console.error('Edge function call failed:', functionError);
+        
+        // Update transaction status to failed  
+        await supabase
+          .from('transactions')
+          .update({ 
+            status: 'failed',
+            message: 'Server sedang bermasalah, silakan coba lagi'
+          })
+          .eq('id', transaction.id);
+        
+        throw new Error('Server sedang bermasalah, silakan coba lagi nanti');
       }
-
-      console.log('PLN purchase result:', result);
-
-      return { transaction, result };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
@@ -89,7 +116,7 @@ export function usePlnDirectPurchase() {
       if (data.result?.success) {
         toast({
           title: "Berhasil",
-          description: "Pembelian token PLN berhasil",
+          description: "Pembelian token PLN berhasil diproses",
         });
       } else {
         toast({

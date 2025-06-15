@@ -20,17 +20,18 @@ serve(async (req) => {
   try {
     const { transaction_id, ref_id, customer_id, sku, price } = await req.json();
 
+    console.log('Purchase PLN Direct called with:', { transaction_id, ref_id, customer_id, sku, price });
+
     if (!transaction_id || !ref_id || !customer_id || !sku || !price) {
+      console.error('Missing required parameters');
       return new Response(JSON.stringify({ 
         success: false,
         message: 'Data transaksi tidak lengkap'
       }), {
-        status: 200,
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-
-    console.log('Processing PLN direct purchase:', { transaction_id, ref_id, customer_id, sku, price });
 
     // Get transaction details first
     const { data: transaction, error: fetchError } = await supabase
@@ -45,26 +46,36 @@ serve(async (req) => {
         success: false,
         message: 'Transaksi tidak ditemukan'
       }), {
-        status: 200,
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
+    console.log('Transaction found, processing with Digiflazz...');
+
     // Call Digiflazz transaction API
     const transactionResult = await callDigiflazzTransaction(ref_id, customer_id, sku);
     
-    console.log('PLN Transaction result:', transactionResult);
+    console.log('Digiflazz transaction result:', transactionResult);
 
     // Update transaction status in database
+    const updateData: any = {
+      status: transactionResult.success ? 'success' : 'failed',
+      message: transactionResult.message,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (transactionResult.digiflazz_trx_id) {
+      updateData.digiflazz_trx_id = transactionResult.digiflazz_trx_id;
+    }
+
+    if (transactionResult.serial_number) {
+      updateData.serial_number = transactionResult.serial_number;
+    }
+
     const { data: updatedTransaction, error: updateError } = await supabase
       .from('transactions')
-      .update({
-        status: transactionResult.success ? 'success' : 'failed',
-        message: transactionResult.message,
-        digiflazz_trx_id: transactionResult.digiflazz_trx_id,
-        serial_number: transactionResult.serial_number,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', transaction_id)
       .select()
       .single();
@@ -75,7 +86,8 @@ serve(async (req) => {
 
     // If transaction successful, update user balance
     if (transactionResult.success) {
-      // Deduct balance from user
+      console.log('Transaction successful, updating user balance...');
+      
       const { error: balanceError } = await supabase.rpc('update_user_balance', {
         p_user_id: transaction.user_id,
         p_amount: -price,
@@ -106,7 +118,7 @@ serve(async (req) => {
       success: false,
       message: 'Terjadi kesalahan sistem'
     }), {
-      status: 200,
+      status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
@@ -124,23 +136,20 @@ async function callDigiflazzTransaction(refId: string, customerId: string, sku: 
     };
   }
 
-  // Generate signature using MD5
-  const sign = await generateMD5Signature(username, apiKey, refId);
-  
-  const payload = {
-    username,
-    buyer_sku_code: sku,
-    customer_no: customerId,
-    ref_id: refId,
-    sign,
-  };
-
-  console.log('Calling Digiflazz PLN transaction API with payload:', {
-    ...payload,
-    sign: '***hidden***'
-  });
-
   try {
+    // Generate signature using MD5
+    const sign = await generateMD5Signature(username, apiKey, refId);
+    
+    const payload = {
+      username,
+      buyer_sku_code: sku,
+      customer_no: customerId,
+      ref_id: refId,
+      sign,
+    };
+
+    console.log('Calling Digiflazz PLN transaction API...');
+
     const response = await fetch('https://api.digiflazz.com/v1/transaction', {
       method: 'POST',
       headers: {
@@ -150,7 +159,7 @@ async function callDigiflazzTransaction(refId: string, customerId: string, sku: 
     });
 
     const responseText = await response.text();
-    console.log('Digiflazz PLN raw response:', responseText);
+    console.log('Digiflazz raw response:', responseText);
     console.log('Response status:', response.status);
 
     if (!response.ok) {
@@ -172,9 +181,9 @@ async function callDigiflazzTransaction(refId: string, customerId: string, sku: 
       };
     }
 
-    console.log('Digiflazz PLN parsed response:', result);
+    console.log('Digiflazz parsed response:', result);
     
-    // Check specific error messages
+    // Handle response based on Digiflazz API format
     if (result.data) {
       // Check for IP whitelist error
       if (result.data.message && result.data.message.includes('IP Anda tidak kami kenali')) {
@@ -188,7 +197,8 @@ async function callDigiflazzTransaction(refId: string, customerId: string, sku: 
       if (result.data.status === 'Gagal') {
         return {
           success: false,
-          message: result.data.message || 'Transaksi gagal'
+          message: result.data.message || 'Transaksi gagal',
+          digiflazz_trx_id: result.data.trx_id
         };
       }
       
@@ -217,7 +227,7 @@ async function callDigiflazzTransaction(refId: string, customerId: string, sku: 
       message: result.message || 'Status transaksi tidak diketahui'
     };
   } catch (error) {
-    console.error('Digiflazz PLN transaction API error:', error);
+    console.error('Digiflazz transaction API error:', error);
     return {
       success: false,
       message: 'Gagal menghubungi server provider. Silakan coba lagi.'
