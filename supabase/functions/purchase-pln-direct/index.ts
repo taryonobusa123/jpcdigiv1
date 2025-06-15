@@ -1,6 +1,9 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { validateInput } from './utils/validateInput.ts';
+import { fetchTransaction, updateTransactionStatus, updateUserBalance } from './utils/transactionUtils.ts';
+import { callDigiflazzTransaction } from './utils/callDigiflazzTransaction.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,15 +21,18 @@ serve(async (req) => {
   }
 
   try {
-    const { transaction_id, ref_id, customer_id, sku, price } = await req.json();
+    const body = await req.json();
+    const { transaction_id, ref_id, customer_id, sku, price } = body;
 
     console.log('Purchase PLN Direct called with:', { transaction_id, ref_id, customer_id, sku, price });
 
-    if (!transaction_id || !ref_id || !customer_id || !sku || !price) {
+    // Validate input
+    const validation = validateInput(body);
+    if (!validation.valid) {
       console.error('[VALIDATION ERROR] Missing required parameters', { transaction_id, ref_id, customer_id, sku, price });
       return new Response(JSON.stringify({ 
         success: false,
-        message: 'Data transaksi tidak lengkap'
+        message: validation.message
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -34,11 +40,7 @@ serve(async (req) => {
     }
 
     // Check transaction exists
-    const { data: transaction, error: fetchError } = await supabase
-      .from('transactions')
-      .select('user_id')
-      .eq('id', transaction_id)
-      .single();
+    const { transaction, error: fetchError } = await fetchTransaction(supabase, transaction_id);
 
     if (fetchError || !transaction) {
       console.error('[FETCH ERROR] Error fetching transaction:', fetchError);
@@ -65,20 +67,16 @@ serve(async (req) => {
     console.log('Digiflazz transaction result:', transactionResult);
 
     // Update transaction status in database
-    const updateData = {
-      status: transactionResult.success ? 'success' : 'failed',
-      message: transactionResult.message,
-      updated_at: new Date().toISOString(),
-      ...(transactionResult.digiflazz_trx_id && { digiflazz_trx_id: transactionResult.digiflazz_trx_id }),
-      ...(transactionResult.serial_number && { serial_number: transactionResult.serial_number })
-    };
-
-    const { data: updatedTransaction, error: updateError } = await supabase
-      .from('transactions')
-      .update(updateData)
-      .eq('id', transaction_id)
-      .select()
-      .single();
+    const { updatedTransaction, error: updateError } = await updateTransactionStatus(
+      supabase,
+      transaction_id,
+      transactionResult.success ? 'success' : 'failed',
+      transactionResult.message,
+      {
+        digiflazz_trx_id: transactionResult.digiflazz_trx_id,
+        serial_number: transactionResult.serial_number,
+      }
+    );
 
     if (updateError) {
       console.error('[DB UPDATE ERROR] Error updating transaction after Digiflazz:', updateError);
@@ -87,14 +85,14 @@ serve(async (req) => {
     // If transaction successful, update user balance
     if (transactionResult.success) {
       console.log('Transaction successful, updating user balance...');
-      const { error: balanceError } = await supabase.rpc('update_user_balance', {
-        p_user_id: transaction.user_id,
-        p_amount: -price,
-        p_type: 'purchase',
-        p_description: `Pembelian token PLN ${sku} untuk meter ${customer_id}`,
-        p_transaction_id: transaction_id
-      });
-
+      const { error: balanceError } = await updateUserBalance(
+        supabase,
+        transaction.user_id,
+        price,
+        sku,
+        customer_id,
+        transaction_id
+      );
       if (balanceError) {
         console.error('[BALANCE UPDATE ERROR] Error updating balance:', balanceError);
       } else {
@@ -125,7 +123,6 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    // Show error detail for debugging
     const errMessage = `[SERVER ERROR] ${error?.message || error?.toString() || error}`;
     console.error('PLN direct purchase error:', errMessage);
     return new Response(JSON.stringify({ 
@@ -137,139 +134,3 @@ serve(async (req) => {
     });
   }
 });
-
-async function callDigiflazzTransaction(refId: string, customerId: string, sku: string) {
-  const username = Deno.env.get('DIGIFLAZZ_USERNAME');
-  const apiKey = Deno.env.get('DIGIFLAZZ_API_KEY');
-  
-  if (!username || !apiKey) {
-    console.error('Digiflazz credentials not configured');
-    return {
-      success: false,
-      message: 'Konfigurasi API tidak lengkap. Silakan hubungi administrator.'
-    };
-  }
-
-  try {
-    // Generate signature using MD5
-    const sign = await generateMD5Signature(username, apiKey, refId);
-    
-    const payload = {
-      username,
-      buyer_sku_code: sku,
-      customer_no: customerId,
-      ref_id: refId,
-      sign,
-    };
-
-    console.log('Calling Digiflazz PLN transaction API...');
-
-    const response = await fetch('https://api.digiflazz.com/v1/transaction', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const responseText = await response.text();
-    console.log('Digiflazz raw response:', responseText);
-    console.log('Response status:', response.status);
-
-    if (!response.ok) {
-      console.error(`HTTP error! status: ${response.status}`);
-      return {
-        success: false,
-        message: `Server error: ${response.status}`
-      };
-    }
-
-    let result;
-    try {
-      result = JSON.parse(responseText);
-    } catch (parseError) {
-      console.error('Failed to parse JSON response:', parseError);
-      return {
-        success: false,
-        message: 'Format respons server tidak valid'
-      };
-    }
-
-    console.log('Digiflazz parsed response:', result);
-    
-    // Handle response based on Digiflazz API format
-    if (result.data) {
-      // Check for IP whitelist error
-      if (result.data.message && result.data.message.includes('IP Anda tidak kami kenali')) {
-        return {
-          success: false,
-          message: 'IP server belum terdaftar di Digiflazz. Silakan hubungi administrator untuk menambahkan IP ke whitelist.'
-        };
-      }
-      
-      // Check for other errors
-      if (result.data.status === 'Gagal') {
-        return {
-          success: false,
-          message: result.data.message || 'Transaksi gagal',
-          digiflazz_trx_id: result.data.trx_id
-        };
-      }
-      
-      // Check if transaction was successful
-      if (result.data.status === 'Sukses') {
-        return {
-          success: true,
-          message: 'Transaksi berhasil',
-          digiflazz_trx_id: result.data.trx_id,
-          serial_number: result.data.sn
-        };
-      }
-      
-      // Handle pending status
-      if (result.data.status === 'Pending') {
-        return {
-          success: false, // We'll mark as false for now, webhook will update later
-          message: 'Transaksi sedang diproses',
-          digiflazz_trx_id: result.data.trx_id
-        };
-      }
-    }
-    
-    return {
-      success: false,
-      message: result.message || 'Status transaksi tidak diketahui'
-    };
-  } catch (error) {
-    console.error('Digiflazz transaction API error:', error);
-    return {
-      success: false,
-      message: 'Gagal menghubungi server provider. Silakan coba lagi.'
-    };
-  }
-}
-
-async function generateMD5Signature(username: string, apiKey: string, refId: string): Promise<string> {
-  const text = username + apiKey + refId;
-  
-  try {
-    const { default: CryptoJS } = await import('https://esm.sh/crypto-js@4.1.1');
-    const hash = CryptoJS.MD5(text).toString();
-    
-    console.log('Generated MD5 signature successfully');
-    return hash;
-  } catch (error) {
-    console.error('Error generating MD5 signature:', error);
-    
-    // Fallback hash function
-    let hash = 0;
-    for (let i = 0; i < text.length; i++) {
-      const char = text.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash;
-    }
-    const fallbackHash = Math.abs(hash).toString(16);
-    console.log('Using fallback hash');
-    return fallbackHash;
-  }
-}
