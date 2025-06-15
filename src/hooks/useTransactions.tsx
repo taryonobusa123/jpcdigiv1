@@ -29,13 +29,17 @@ export function useTransactions() {
 
       if (pulsaError) throw pulsaError;
 
+      // Logging fetched data for debugging
+      console.log("Fetched transactions:", transactions);
+      console.log("Fetched pulsa transactions:", pulsaTransactions);
+
       // Combine and format all transactions
       const allTransactions = [
         ...(transactions || []).map(tx => ({
           id: tx.id,
           type: tx.product_name,
           category: 'general',
-          amount: `-Rp ${tx.price.toLocaleString('id-ID')}`,
+          amount: `-Rp ${tx.price?.toLocaleString('id-ID')}`,
           status: tx.status || 'pending',
           date: new Date(tx.created_at || '').toLocaleDateString('id-ID'),
           time: new Date(tx.created_at || '').toLocaleTimeString('id-ID', { 
@@ -51,7 +55,7 @@ export function useTransactions() {
           id: tx.id,
           type: tx.product_name,
           category: 'pulsa',
-          amount: `-Rp ${tx.price.toLocaleString('id-ID')}`,
+          amount: `-Rp ${tx.price?.toLocaleString('id-ID')}`,
           status: tx.status || 'pending',
           date: new Date(tx.created_at || '').toLocaleDateString('id-ID'),
           time: new Date(tx.created_at || '').toLocaleTimeString('id-ID', { 
@@ -65,8 +69,14 @@ export function useTransactions() {
         }))
       ];
 
+      // Cek isi array gabungan sebelum sorting
+      console.log("All transactions combined:", allTransactions);
+
       // Sort by created_at descending
-      allTransactions.sort((a, b) => new Date(b.date + ' ' + b.time).getTime() - new Date(a.date + ' ' + a.time).getTime());
+      allTransactions.sort((a, b) => 
+        new Date(b.date + ' ' + b.time).getTime() - 
+        new Date(a.date + ' ' + a.time).getTime()
+      );
 
       return allTransactions;
     },
