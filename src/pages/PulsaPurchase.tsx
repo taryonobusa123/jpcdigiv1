@@ -1,110 +1,86 @@
 
-import React, { useState } from 'react';
-import { ArrowLeft, Smartphone, CreditCard } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Smartphone } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import BottomNavigation from '@/components/BottomNavigation';
-import { usePulsaProducts, usePulsaOperators } from '@/hooks/usePulsaProducts';
-import { usePulsaPurchase } from '@/hooks/usePulsaPurchase';
 import { useAuth } from '@/hooks/useAuth';
+import { usePulsaProducts } from '@/hooks/usePulsaProducts';
+import { usePulsaPurchase } from '@/hooks/usePulsaPurchase';
+import BottomNavigation from '../components/BottomNavigation';
+import LoadingScreen from '../components/LoadingScreen';
 
 const PulsaPurchase = () => {
+  const { user } = useAuth();
+  const [isPageLoading, setIsPageLoading] = useState(true);
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [selectedOperator, setSelectedOperator] = useState('');
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [detectedOperator, setDetectedOperator] = useState('');
   
-  const { user, profile } = useAuth();
-  const { data: operators, isLoading: operatorsLoading } = usePulsaOperators();
-  const { data: products, isLoading: productsLoading } = usePulsaProducts(selectedOperator);
-  const pulsaPurchase = usePulsaPurchase();
+  const { data: products, isLoading: isLoadingProducts } = usePulsaProducts();
+  const { purchasePulsa, isLoading: isPurchasing } = usePulsaPurchase();
 
-  const handlePurchase = () => {
-    console.log('Purchase button clicked');
-    console.log('Selected product:', selectedProduct);
-    console.log('Phone number:', phoneNumber);
-    console.log('User:', user);
-    console.log('Profile balance:', profile?.balance);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsPageLoading(false);
+    }, 800);
 
-    if (!selectedProduct || !phoneNumber.trim()) {
-      alert('Silakan lengkapi nomor telepon dan pilih nominal pulsa');
-      return;
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (phoneNumber.length >= 4) {
+      const prefix = phoneNumber.substring(0, 4);
+      
+      if (['0811', '0812', '0813', '0821', '0822', '0851', '0852', '0853'].includes(prefix)) {
+        setDetectedOperator('TELKOMSEL');
+      } else if (['0814', '0815', '0816', '0855', '0856', '0857', '0858'].includes(prefix)) {
+        setDetectedOperator('INDOSAT');
+      } else if (['0817', '0818', '0819', '0859', '0877', '0878'].includes(prefix)) {
+        setDetectedOperator('XL');
+      } else if (['0838', '0831', '0832', '0833'].includes(prefix)) {
+        setDetectedOperator('AXIS');
+      } else if (['0895', '0896', '0897', '0898', '0899'].includes(prefix)) {
+        setDetectedOperator('THREE');
+      } else if (['0881', '0882', '0883', '0884', '0885', '0886', '0887', '0888'].includes(prefix)) {
+        setDetectedOperator('SMARTFREN');
+      } else {
+        setDetectedOperator('');
+      }
+    } else {
+      setDetectedOperator('');
     }
+  }, [phoneNumber]);
 
-    if (!user) {
-      alert('Silakan login terlebih dahulu');
-      return;
-    }
+  const handlePurchase = async () => {
+    if (!phoneNumber || !selectedProduct || !user) return;
 
-    if (!profile || profile.balance < selectedProduct.price) {
-      alert('Saldo tidak mencukupi untuk melakukan pembelian');
-      return;
-    }
-
-    console.log('Starting purchase mutation...');
-    pulsaPurchase.mutate({
-      phone_number: phoneNumber,
-      operator: selectedOperator,
-      product_id: selectedProduct.id,
-      product_name: selectedProduct.product_name,
-      nominal: selectedProduct.nominal,
-      price: selectedProduct.price,
-      sku: selectedProduct.buyer_sku_code,
-    });
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const detectOperator = (phone: string) => {
-    const cleanPhone = phone.replace(/\D/g, '');
-    
-    if (cleanPhone.startsWith('0811') || cleanPhone.startsWith('0812') || 
-        cleanPhone.startsWith('0813') || cleanPhone.startsWith('0821') ||
-        cleanPhone.startsWith('0822') || cleanPhone.startsWith('0823') ||
-        cleanPhone.startsWith('0851') || cleanPhone.startsWith('0852') ||
-        cleanPhone.startsWith('0853')) {
-      return 'Telkomsel';
-    } else if (cleanPhone.startsWith('0814') || cleanPhone.startsWith('0815') ||
-               cleanPhone.startsWith('0816') || cleanPhone.startsWith('0855') ||
-               cleanPhone.startsWith('0856') || cleanPhone.startsWith('0857') ||
-               cleanPhone.startsWith('0858')) {
-      return 'Indosat';
-    } else if (cleanPhone.startsWith('0817') || cleanPhone.startsWith('0818') ||
-               cleanPhone.startsWith('0819') || cleanPhone.startsWith('0859') ||
-               cleanPhone.startsWith('0877') || cleanPhone.startsWith('0878')) {
-      return 'XL';
-    } else if (cleanPhone.startsWith('0895') || cleanPhone.startsWith('0896') ||
-               cleanPhone.startsWith('0897') || cleanPhone.startsWith('0898') ||
-               cleanPhone.startsWith('0899')) {
-      return 'Tri';
-    } else if (cleanPhone.startsWith('0881') || cleanPhone.startsWith('0882') ||
-               cleanPhone.startsWith('0883') || cleanPhone.startsWith('0884') ||
-               cleanPhone.startsWith('0885') || cleanPhone.startsWith('0886') ||
-               cleanPhone.startsWith('0887') || cleanPhone.startsWith('0888') ||
-               cleanPhone.startsWith('0889')) {
-      return 'Smartfren';
-    }
-    return '';
-  };
-
-  const handlePhoneChange = (value: string) => {
-    setPhoneNumber(value);
-    const detectedOperator = detectOperator(value);
-    if (detectedOperator && detectedOperator !== selectedOperator) {
-      setSelectedOperator(detectedOperator);
+    try {
+      await purchasePulsa({
+        phone_number: phoneNumber,
+        product_code: selectedProduct.buyer_sku_code,
+        amount: selectedProduct.price
+      });
+      
+      // Reset form after successful purchase
+      setPhoneNumber('');
       setSelectedProduct(null);
+      setDetectedOperator('');
+    } catch (error) {
+      console.error('Error purchasing pulsa:', error);
     }
   };
 
-  const isFormValid = selectedProduct && phoneNumber.trim() && user;
-  const hasSufficientBalance = profile && profile.balance >= (selectedProduct?.price || 0);
+  if (isPageLoading) {
+    return <LoadingScreen message="Memuat halaman pulsa..." />;
+  }
+
+  if (isPurchasing) {
+    return <LoadingScreen message="Memproses pembelian pulsa..." />;
+  }
+
+  const filteredProducts = products?.filter(product => 
+    product.category === 'Pulsa' && 
+    (detectedOperator ? product.brand === detectedOperator : true)
+  ) || [];
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -118,164 +94,114 @@ const PulsaPurchase = () => {
         </div>
       </div>
 
+      {/* Form */}
       <div className="p-4 space-y-4">
-        {/* User Balance */}
-        {profile && (
-          <div className="bg-white rounded-xl shadow-md p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <CreditCard className="w-5 h-5 text-green-500" />
-                <span className="font-medium text-gray-800">Saldo Anda</span>
-              </div>
-              <span className="font-bold text-green-600">
-                {formatCurrency(profile.balance)}
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* Login Notice */}
-        {!user && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-            <p className="text-yellow-800 text-sm">
-              Silakan login terlebih dahulu untuk melakukan pembelian pulsa.
-            </p>
-          </div>
-        )}
-
-        {/* Phone Number Input */}
         <div className="bg-white rounded-xl shadow-md p-4">
-          <Label htmlFor="phone" className="text-lg font-semibold text-gray-800 mb-4 block">
-            Nomor Telepon
-          </Label>
-          <Input
-            id="phone"
-            type="tel"
-            value={phoneNumber}
-            onChange={(e) => handlePhoneChange(e.target.value)}
-            placeholder="0812xxxxxxxx"
-            className="text-lg"
-          />
-          {selectedOperator && (
-            <div className="mt-2">
-              <span className="inline-block bg-green-100 text-green-600 text-sm px-2 py-1 rounded-full">
-                {selectedOperator} terdeteksi
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Operator Selection */}
-        <div className="bg-white rounded-xl shadow-md p-4">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Pilih Operator</h3>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Nomor Telepon</h3>
           
-          {operatorsLoading ? (
-            <div className="text-center py-4">Loading operators...</div>
-          ) : (
-            <div className="grid grid-cols-2 gap-3">
-              {operators?.map((operator) => (
-                <button
-                  key={operator}
-                  onClick={() => {
-                    console.log('Operator selected:', operator);
-                    setSelectedOperator(operator);
-                    setSelectedProduct(null);
-                  }}
-                  className={`p-4 rounded-lg border-2 text-center transition-colors ${
-                    selectedOperator === operator
-                      ? 'border-green-500 bg-green-50'
-                      : 'border-gray-200 hover:border-green-300'
-                  }`}
-                >
-                  <Smartphone className="w-6 h-6 mx-auto mb-2 text-green-500" />
-                  <span className="font-medium text-gray-800">{operator}</span>
-                </button>
-              ))}
-            </div>
-          )}
+          <div className="relative">
+            <input
+              type="tel"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="08xxxxxxxxxx"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
+            {detectedOperator && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <span className="bg-green-100 text-green-600 px-2 py-1 rounded-full text-xs font-medium">
+                  {detectedOperator}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Product Selection */}
-        {selectedOperator && (
+        {phoneNumber && (
           <div className="bg-white rounded-xl shadow-md p-4">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Pilih Nominal</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Pilih Nominal Pulsa</h3>
             
-            {productsLoading ? (
-              <div className="text-center py-4">Loading products...</div>
+            {isLoadingProducts ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mx-auto"></div>
+                <p className="text-gray-500 mt-2">Memuat produk...</p>
+              </div>
             ) : (
-              <div className="space-y-3">
-                {products?.map((product) => (
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {filteredProducts.map((product, index) => (
                   <button
-                    key={product.id}
-                    onClick={() => {
-                      console.log('Product selected:', product);
-                      setSelectedProduct(product);
-                    }}
+                    key={index}
+                    onClick={() => setSelectedProduct(product)}
                     className={`w-full p-4 rounded-lg border-2 text-left transition-colors ${
-                      selectedProduct?.id === product.id
+                      selectedProduct?.buyer_sku_code === product.buyer_sku_code
                         ? 'border-green-500 bg-green-50'
                         : 'border-gray-200 hover:border-green-300'
                     }`}
                   >
                     <div className="flex justify-between items-center">
                       <div>
-                        <h4 className="font-semibold text-gray-800">
-                          {formatCurrency(product.nominal)}
-                        </h4>
-                        <p className="text-sm text-gray-600">{product.product_name}</p>
+                        <div className="flex items-center space-x-2 mb-1">
+                          <span className="inline-block bg-green-100 text-green-600 text-xs px-2 py-1 rounded-full">
+                            {product.brand}
+                          </span>
+                        </div>
+                        <h4 className="font-semibold text-gray-800">{product.product_name}</h4>
+                        <p className="text-sm text-gray-500">{product.desc || 'Pulsa reguler'}</p>
                       </div>
                       <span className="font-bold text-green-600">
-                        {formatCurrency(product.price)}
+                        Rp {product.price?.toLocaleString()}
                       </span>
                     </div>
                   </button>
                 ))}
+                
+                {filteredProducts.length === 0 && (
+                  <div className="text-center py-8">
+                    <Smartphone className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                    <p className="text-gray-500">
+                      {detectedOperator 
+                        ? `Produk ${detectedOperator} tidak tersedia` 
+                        : 'Masukkan nomor yang valid untuk melihat produk'
+                      }
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>
         )}
 
-        {/* Purchase Summary & Button */}
-        {selectedProduct && phoneNumber && (
+        {selectedProduct && (
           <div className="bg-white rounded-xl shadow-md p-4">
-            <div className="mb-4">
-              <h4 className="font-semibold text-gray-800 mb-2">Detail Pembelian:</h4>
-              <div className="space-y-1 text-sm text-gray-600">
-                <p>Nomor: {phoneNumber}</p>
-                <p>Operator: {selectedOperator}</p>
-                <p>Nominal: {formatCurrency(selectedProduct.nominal)}</p>
-                <p>Harga: {formatCurrency(selectedProduct.price)}</p>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Ringkasan Pembelian</h3>
+            
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Nomor Tujuan</span>
+                <span className="font-medium">{phoneNumber}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Produk</span>
+                <span className="font-medium">{selectedProduct.product_name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Harga</span>
+                <span className="font-medium">Rp {selectedProduct.price?.toLocaleString()}</span>
+              </div>
+              <hr />
+              <div className="flex justify-between text-lg font-bold">
+                <span>Total Bayar</span>
+                <span className="text-green-600">Rp {selectedProduct.price?.toLocaleString()}</span>
               </div>
             </div>
-
-            {/* Balance warning */}
-            {profile && !hasSufficientBalance && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-800 text-sm">
-                  Saldo tidak mencukupi. Saldo Anda: {formatCurrency(profile.balance)}, 
-                  diperlukan: {formatCurrency(selectedProduct.price)}
-                </p>
-              </div>
-            )}
             
-            <Button
+            <button
               onClick={handlePurchase}
-              disabled={pulsaPurchase.isPending || !isFormValid || !hasSufficientBalance}
-              className={`w-full py-3 text-lg font-semibold transition-colors ${
-                pulsaPurchase.isPending || !isFormValid || !hasSufficientBalance
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-green-500 hover:bg-green-600 text-white'
-              }`}
+              disabled={!user}
+              className="w-full bg-green-500 text-white py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors mt-4 disabled:bg-gray-300"
             >
-              {pulsaPurchase.isPending 
-                ? 'Memproses...' 
-                : !user
-                ? 'Login Diperlukan'
-                : !hasSufficientBalance
-                ? 'Saldo Tidak Mencukupi'
-                : `Beli Sekarang - ${formatCurrency(selectedProduct.price)}`
-              }
-            </Button>
+              {!user ? 'Login untuk Membeli' : 'Beli Sekarang'}
+            </button>
           </div>
         )}
       </div>
