@@ -1,61 +1,116 @@
 
-import React from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import BottomNavigation from "../components/BottomNavigation";
-import { CheckCircle, Clock, XCircle } from "lucide-react";
-
-const StatusBadge = ({ status }: { status?: string }) => {
-  const variants: { [key: string]: { color: string; icon: React.ReactNode; text: string } } = {
-    success: { color: "bg-green-100 text-green-700", icon: <CheckCircle className="w-4 h-4 mr-1" />, text: "Berhasil" },
-    pending: { color: "bg-yellow-100 text-yellow-700", icon: <Clock className="w-4 h-4 mr-1" />, text: "Pending" },
-    failed: { color: "bg-red-100 text-red-700", icon: <XCircle className="w-4 h-4 mr-1" />, text: "Gagal" },
-  };
-  const variant = variants[status ?? "pending"] || { color: "bg-gray-100 text-gray-600", icon: <Clock className="w-4 h-4 mr-1" />, text: status };
-  return (
-    <span className={`flex items-center px-2 py-1 rounded-full text-xs font-medium ${variant.color}`}>
-      {variant.icon}
-      {variant.text}
-    </span>
-  );
-};
-
-const fetchTransactions = async (userId: string) => {
-  if (!userId) throw new Error("User belum login/sesi kadaluwarsa");
-  const { data, error } = await supabase
-    .from("transactions")
-    .select("*")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
-  return data ?? [];
-};
+import React, { useState } from 'react';
+import { 
+  Calendar, Filter, Search, CheckCircle, Clock, XCircle, 
+  ArrowUpRight, ArrowDownLeft, Zap, Smartphone, Wifi, DollarSign
+} from 'lucide-react';
+import BottomNavigation from '../components/BottomNavigation';
+import { useTransactions } from '@/hooks/useTransactions';
+import { useAuth } from '@/hooks/useAuth';
 
 const History = () => {
+  const [activeTab, setActiveTab] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const { user } = useAuth();
+  const { data: transactions = [], isLoading, error } = useTransactions();
 
-  const { data: transactions, isLoading, error, refetch } = useQuery({
-    queryKey: ["transactions-history", user?.id],
-    queryFn: () => fetchTransactions(user?.id as string),
-    enabled: !!user,
+  // Log transactions for debug purposes
+  console.log('Transaksi dari useTransactions:', transactions);
+
+  const tabs = [
+    { id: 'all', label: 'Semua' },
+    { id: 'success', label: 'Berhasil' },
+    { id: 'pending', label: 'Pending' },
+    { id: 'failed', label: 'Gagal' }
+  ];
+
+  const getTransactionIcon = (category: string, type: string) => {
+    if (category === 'pulsa') return Smartphone;
+    if ((type || '').toLowerCase().includes('pln') || (type || '').toLowerCase().includes('listrik')) return Zap;
+    if ((type || '').toLowerCase().includes('internet') || (type || '').toLowerCase().includes('wifi')) return Wifi;
+    if ((type || '').toLowerCase().includes('transfer')) return ArrowUpRight;
+    if ((type || '').toLowerCase().includes('topup') || (type || '').toLowerCase().includes('saldo')) return ArrowDownLeft;
+    return DollarSign;
+  };
+
+  const getIconColor = (category: string, type: string) => {
+    if (category === 'pulsa') return { color: 'text-blue-600', bg: 'bg-blue-100' };
+    if ((type || '').toLowerCase().includes('pln') || (type || '').toLowerCase().includes('listrik')) return { color: 'text-yellow-600', bg: 'bg-yellow-100' };
+    if ((type || '').toLowerCase().includes('internet') || (type || '').toLowerCase().includes('wifi')) return { color: 'text-purple-600', bg: 'bg-purple-100' };
+    if ((type || '').toLowerCase().includes('transfer')) return { color: 'text-red-600', bg: 'bg-red-100' };
+    if ((type || '').toLowerCase().includes('topup') || (type || '').toLowerCase().includes('saldo')) return { color: 'text-green-600', bg: 'bg-green-100' };
+    return { color: 'text-gray-600', bg: 'bg-gray-100' };
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'success':
+        return <CheckCircle className="w-4 h-4 text-green-600" />;
+      case 'pending':
+        return <Clock className="w-4 h-4 text-yellow-600" />;
+      case 'failed':
+        return <XCircle className="w-4 h-4 text-red-600" />;
+      default:
+        return <Clock className="w-4 h-4 text-yellow-600" />;
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'success':
+        return 'Berhasil';
+      case 'pending':
+        return 'Pending';
+      case 'failed':
+        return 'Gagal';
+      default:
+        return status ? status : 'Status Tidak Dikenal';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'success':
+        return 'text-green-600';
+      case 'pending':
+        return 'text-yellow-600';
+      case 'failed':
+        return 'text-red-600';
+      default:
+        return 'text-yellow-600';
+    }
+  };
+
+  // Filter yang tahan jika ada tipe/desc undefined
+  const filteredTransactions = transactions.filter(transaction => {
+    // Tampilkan semua status pada tab 'all'
+    const matchesTab =
+      activeTab === 'all'
+        ? true
+        : transaction.status === activeTab;
+
+    const typeStr = (transaction.type || '').toLowerCase();
+    const descStr = (transaction.description || '').toLowerCase();
+
+    const matchesSearch =
+      typeStr.includes(searchQuery.toLowerCase()) ||
+      descStr.includes(searchQuery.toLowerCase());
+    return matchesTab && matchesSearch;
   });
 
-  React.useEffect(() => {
-    // Untuk debug: log hasil query ke console
-    console.log("Result data transactions:", transactions);
-    if (error) {
-      console.error("Error fetch transactions:", error);
-    }
-  }, [transactions, error]);
-
+  // Show login prompt if user is not authenticated
   if (!user) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 pb-20">
-        <div className="bg-white rounded-xl shadow p-6 mb-4 text-center border">
-          <h2 className="text-xl font-bold mb-2">Login Diperlukan</h2>
-          <p className="text-gray-600">Silakan login untuk melihat riwayat transaksi Anda.</p>
+      <div className="min-h-screen bg-gray-50 pb-20">
+        <div className="bg-white border-b border-gray-200 p-4">
+          <h1 className="text-xl font-bold text-gray-800">Riwayat Transaksi</h1>
+        </div>
+        <div className="flex flex-col items-center justify-center p-8 text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <Search className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-800 mb-2">Login Diperlukan</h3>
+          <p className="text-gray-500">Silakan login untuk melihat riwayat transaksi Anda</p>
         </div>
         <BottomNavigation />
       </div>
@@ -64,74 +119,132 @@ const History = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="bg-white sticky top-0 z-40 border-b border-gray-200 p-4 flex items-center gap-2">
-        <span className="font-semibold text-blue-700 text-lg">Riwayat Transaksi</span>
-        <button
-          onClick={() => refetch()}
-          className="ml-auto bg-blue-50 text-blue-700 border border-blue-100 rounded px-2 py-1 text-xs hover:bg-blue-100 transition"
-          type="button"
-        >
-          Refresh
-        </button>
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 p-4 sticky top-0 z-40">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-xl font-bold text-gray-800">Riwayat Transaksi</h1>
+          <div className="flex space-x-2">
+            <button className="p-2 bg-gray-100 rounded-lg">
+              <Calendar className="w-5 h-5 text-gray-600" />
+            </button>
+            <button className="p-2 bg-gray-100 rounded-lg">
+              <Filter className="w-5 h-5 text-gray-600" />
+            </button>
+          </div>
+        </div>
+        
+        {/* Search Bar */}
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Cari transaksi..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 bg-gray-100 rounded-lg text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        {/* Tabs */}
+        <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${
+                activeTab === tab.id
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="px-2 mt-4 w-full max-w-md mx-auto">
+
+      {/* Transaction List */}
+      <div className="p-4">
         {isLoading ? (
-          <div className="flex justify-center items-center py-20">
+          <div className="flex justify-center items-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
         ) : error ? (
-          <div className="flex flex-col items-center text-center py-20">
-            <XCircle className="w-10 h-10 text-red-400 mb-2" />
-            <p className="text-red-500 mb-2">Gagal memuat riwayat transaksi.</p>
-            <button
-              onClick={() => refetch()}
-              className="bg-gray-100 text-gray-800 px-3 py-1 rounded text-xs border hover:bg-gray-200"
-              type="button"
-            >
-              Coba lagi
-            </button>
-            <span className="mt-2 text-xs text-gray-400 break-all">{String(error?.message || "")}</span>
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <XCircle className="w-8 h-8 text-red-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-800 mb-2">Terjadi Kesalahan</h3>
+            <p className="text-gray-500">Gagal memuat riwayat transaksi</p>
           </div>
-        ) : !transactions || transactions.length === 0 ? (
-          <div className="flex flex-col items-center text-center py-20">
-            <Clock className="w-10 h-10 text-gray-300 mb-2" />
-            <p className="text-gray-600 font-medium">Belum ada transaksi.</p>
+        ) : filteredTransactions.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-800 mb-2">
+              {transactions.length === 0 
+                ? 'Belum ada transaksi' 
+                : 'Tidak ada transaksi'}
+            </h3>
+            <p className="text-gray-500">
+              {transactions.length === 0 
+                ? 'Mulai bertransaksi untuk melihat riwayat di sini'
+                : 'Coba ubah filter atau kata kunci pencarian'}
+            </p>
+            <div className="text-xs text-gray-400 mt-3">
+              <span>Total transaksi: {transactions.length}</span>
+            </div>
           </div>
         ) : (
           <div className="space-y-3">
-            {/* Judul Kolom */}
-            <div className="grid grid-cols-6 gap-2 font-semibold text-xs text-gray-700 px-2 pb-1">
-              <div>Tanggal</div>
-              <div>Produk</div>
-              <div className="col-span-2">Customer ID</div>
-              <div>Harga</div>
-              <div>Status</div>
-            </div>
-            {/* Daftar Transaksi */}
-            {transactions.map((tx: any) => (
-              <div key={tx.id} className="grid grid-cols-6 gap-2 bg-white rounded-lg border border-gray-100 px-2 py-2 text-xs items-center">
-                <div className="truncate">
-                  {tx.created_at ? new Date(tx.created_at).toLocaleDateString("id-ID") : "-"}
-                  <br />
-                  <span className="text-gray-400">{tx.created_at ? new Date(tx.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : ""}</span>
+            {filteredTransactions.map((transaction) => {
+              const IconComponent = getTransactionIcon(transaction.category, transaction.type);
+              const iconColors = getIconColor(transaction.category, transaction.type);
+              
+              return (
+                <div key={transaction.id} className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-2.5 rounded-lg ${iconColors.bg}`}>
+                      <IconComponent className={`w-5 h-5 ${iconColors.color}`} />
+                    </div>
+                    
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <h4 className="font-semibold text-gray-800 text-sm">{transaction.type || '-'}</h4>
+                        <span className="font-bold text-sm text-gray-800">
+                          {transaction.amount || '-'}
+                        </span>
+                      </div>
+                      
+                      <p className="text-gray-500 text-xs mb-2">{transaction.description || '-'}</p>
+                      
+                      {transaction.ref_id && (
+                        <p className="text-gray-400 text-xs mb-1">ID: {transaction.ref_id}</p>
+                      )}
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-400 text-xs">
+                          {transaction.date} • {transaction.time}
+                        </span>
+                        <div className={`flex items-center space-x-1 ${getStatusColor(transaction.status)}`}>
+                          {getStatusIcon(transaction.status)}
+                          <span className="text-xs font-medium">{getStatusText(transaction.status)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="truncate">{tx.product_name ?? "-"}</div>
-                <div className="col-span-2 truncate">{tx.customer_id ?? "-"}</div>
-                <div className="font-medium text-right pr-1 text-gray-700">
-                  Rp{Number(tx.price).toLocaleString("id-ID")}
-                </div>
-                <div>
-                  <StatusBadge status={tx.status} />
-                  <div className="text-gray-400 mt-1">ID: {tx.ref_id ?? "-"}</div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
+
       <BottomNavigation />
     </div>
   );
 };
 
 export default History;
+
