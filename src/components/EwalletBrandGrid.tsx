@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { EWALLET_BRAND_LOGOS } from "./ewallet-brand-logos";
 
 type Product = {
   id: string;
@@ -41,18 +42,30 @@ const EwalletBrandGrid: React.FC<EwalletBrandGridProps> = ({ brandGroups }) => {
   return (
     <div>
       <div className="grid grid-cols-3 md:grid-cols-5 gap-6 my-8">
-        {brandNames.map((brand, idx) => (
-          <button
-            key={brand}
-            onClick={() => setOpenBrand(brand)}
-            className="flex flex-col items-center gap-2 group select-none"
-          >
-            <div className={`w-16 h-16 md:w-20 md:h-20 flex items-center justify-center rounded-full shadow-lg font-bold text-3xl md:text-4xl text-white ${pickColor(idx)} group-hover:scale-105 transition-transform`}>
-              {brand.slice(0, 2).toUpperCase()}
-            </div>
-            <span className="text-sm mt-1 font-medium">{brand}</span>
-          </button>
-        ))}
+        {brandNames.map((brand, idx) => {
+          const logoSrc = EWALLET_BRAND_LOGOS[brand.toLowerCase()] || null;
+          return (
+            <button
+              key={brand}
+              onClick={() => setOpenBrand(brand)}
+              className="flex flex-col items-center gap-2 group select-none"
+            >
+              <div className={`w-16 h-16 md:w-20 md:h-20 flex items-center justify-center rounded-full shadow-lg font-bold text-3xl md:text-4xl text-white ${pickColor(idx)} group-hover:scale-105 transition-transform bg-white/20`}>
+                {logoSrc ? (
+                  <img
+                    src={logoSrc}
+                    alt={brand}
+                    className="w-12 h-12 md:w-16 md:h-16 object-contain"
+                    loading="lazy"
+                  />
+                ) : (
+                  <span>{brand.slice(0, 2).toUpperCase()}</span>
+                )}
+              </div>
+              <span className="text-sm mt-1 font-medium">{brand}</span>
+            </button>
+          );
+        })}
       </div>
       {openBrand && (
         <Dialog open onOpenChange={() => setOpenBrand(null)}>
@@ -91,4 +104,3 @@ const EwalletBrandGrid: React.FC<EwalletBrandGridProps> = ({ brandGroups }) => {
 };
 
 export default EwalletBrandGrid;
-
