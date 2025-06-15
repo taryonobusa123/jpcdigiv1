@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
-import { Phone, Shield, CheckCircle } from 'lucide-react';
+import { Phone, Shield, CheckCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -26,6 +26,7 @@ export default function WhatsAppVerification({
   const [isSending, setIsSending] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [step, setStep] = useState(initialWhatsappNumber ? 'otp' : 'phone');
+  const [hasError, setHasError] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -85,12 +86,26 @@ export default function WhatsAppVerification({
   const handleSendOTP = async (numberToUse?: string) => {
     const targetNumber = numberToUse || whatsappNumber;
     setIsSending(true);
+    setHasError(false);
+    
     try {
+      console.log('Attempting to send OTP to:', targetNumber);
+      
       const { data, error } = await supabase.functions.invoke('send-whatsapp-otp', {
         body: { whatsapp_number: targetNumber }
       });
 
-      if (error) throw error;
+      console.log('OTP response:', { data, error });
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw new Error(error.message || 'Gagal mengirim OTP');
+      }
+
+      if (data?.error) {
+        console.error('Function returned error:', data.error);
+        throw new Error(data.error);
+      }
 
       toast({
         title: "Berhasil",
@@ -98,11 +113,25 @@ export default function WhatsAppVerification({
       });
       
       startCountdown();
+      setHasError(false);
     } catch (error: any) {
       console.error('Send OTP error:', error);
+      setHasError(true);
+      
+      // Show more user-friendly error messages
+      let errorMessage = "Gagal mengirim kode OTP";
+      
+      if (error.message?.includes('Request Failed')) {
+        errorMessage = "Layanan WhatsApp sedang tidak tersedia. Silakan coba lagi dalam beberapa menit.";
+      } else if (error.message?.includes('non-2xx status')) {
+        errorMessage = "Terjadi masalah teknis. Silakan coba lagi atau hubungi admin.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Error",
-        description: error.message || "Gagal mengirim kode OTP",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -121,6 +150,8 @@ export default function WhatsAppVerification({
 
     setIsLoading(true);
     try {
+      console.log('Attempting to verify OTP:', otpCode);
+      
       const { data, error } = await supabase.functions.invoke('verify-whatsapp-otp', {
         body: { 
           whatsapp_number: whatsappNumber, 
@@ -129,7 +160,17 @@ export default function WhatsAppVerification({
         }
       });
 
-      if (error) throw error;
+      console.log('Verify response:', { data, error });
+
+      if (error) {
+        console.error('Verify function error:', error);
+        throw new Error(error.message || 'Gagal memverifikasi OTP');
+      }
+
+      if (data?.error) {
+        console.error('Function returned error:', data.error);
+        throw new Error(data.error);
+      }
 
       toast({
         title: "Berhasil",
@@ -139,13 +180,27 @@ export default function WhatsAppVerification({
       onVerificationComplete();
     } catch (error: any) {
       console.error('Verify OTP error:', error);
+      
+      let errorMessage = "Kode OTP tidak valid";
+      if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Error",
-        description: error.message || "Kode OTP tidak valid",
+        description: errorMessage,
         variant: "destructive",
       });
     }
     setIsLoading(false);
+  };
+
+  const handleSkipVerification = () => {
+    toast({
+      title: "Verifikasi Dilewati",
+      description: "Anda dapat melakukan verifikasi WhatsApp nanti di halaman profil",
+    });
+    onVerificationComplete();
   };
 
   if (step === 'phone') {
@@ -179,12 +234,23 @@ export default function WhatsAppVerification({
               </p>
             </div>
             
-            <Button 
-              type="submit"
-              className="w-full bg-green-500 hover:bg-green-600"
-            >
-              Lanjutkan Verifikasi
-            </Button>
+            <div className="space-y-2">
+              <Button 
+                type="submit"
+                className="w-full bg-green-500 hover:bg-green-600"
+              >
+                Lanjutkan Verifikasi
+              </Button>
+              
+              <Button 
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={handleSkipVerification}
+              >
+                Lewati Verifikasi (Nanti)
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>
@@ -195,11 +261,18 @@ export default function WhatsAppVerification({
     <Card className="w-full max-w-md mx-auto">
       <CardHeader className="text-center">
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Shield className="w-8 h-8 text-green-600" />
+          {hasError ? (
+            <AlertCircle className="w-8 h-8 text-red-600" />
+          ) : (
+            <Shield className="w-8 h-8 text-green-600" />
+          )}
         </div>
         <CardTitle>Verifikasi WhatsApp</CardTitle>
         <CardDescription>
-          Kami telah mengirim kode verifikasi ke nomor WhatsApp Anda
+          {hasError 
+            ? "Terjadi masalah saat mengirim kode verifikasi"
+            : "Kami akan mengirim kode verifikasi ke nomor WhatsApp Anda"
+          }
         </CardDescription>
       </CardHeader>
       
@@ -216,6 +289,20 @@ export default function WhatsAppVerification({
             Ubah
           </Button>
         </div>
+
+        {hasError ? (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-start space-x-3">
+              <AlertCircle className="w-5 h-5 text-red-500 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-red-800">Gagal Mengirim OTP</p>
+                <p className="text-sm text-red-600 mt-1">
+                  Layanan WhatsApp sedang bermasalah. Silakan coba lagi atau lewati verifikasi untuk sementara.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         <div className="space-y-4">
           <Button 
@@ -246,13 +333,23 @@ export default function WhatsAppVerification({
             </InputOTP>
           </div>
 
-          <Button 
-            onClick={handleVerifyOTP}
-            disabled={isLoading || otpCode.length !== 6}
-            className="w-full"
-          >
-            {isLoading ? 'Memverifikasi...' : 'Verifikasi Kode'}
-          </Button>
+          <div className="space-y-2">
+            <Button 
+              onClick={handleVerifyOTP}
+              disabled={isLoading || otpCode.length !== 6}
+              className="w-full"
+            >
+              {isLoading ? 'Memverifikasi...' : 'Verifikasi Kode'}
+            </Button>
+            
+            <Button 
+              variant="ghost"
+              onClick={handleSkipVerification}
+              className="w-full text-gray-600"
+            >
+              Lewati Verifikasi (Nanti)
+            </Button>
+          </div>
         </div>
 
         <div className="text-xs text-gray-500 text-center">
