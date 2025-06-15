@@ -3,11 +3,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 export function usePulsaPurchase() {
   const queryClient = useQueryClient();
   const { user, refreshProfile } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   return useMutation({
     mutationFn: async (transaction: {
@@ -82,6 +84,9 @@ export function usePulsaPurchase() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['pulsa-transactions'] });
       refreshProfile();
+      
+      // Navigate to transaction detail page
+      navigate(`/transaction-detail/${data.transaction.id}`);
       
       if (data.result?.success) {
         toast({

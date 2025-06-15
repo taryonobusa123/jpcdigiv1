@@ -27,6 +27,7 @@ import TopupHistory from "@/pages/TopupHistory";
 import TopupDetail from "@/pages/TopupDetail";
 import Transfer from "@/pages/Transfer";
 import DataPackagePurchase from "@/pages/DataPackagePurchase";
+import TransactionDetail from "@/pages/TransactionDetail";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +61,7 @@ const App = () => (
             <Route path="/topup-detail/:id" element={<TopupDetail />} />
             <Route path="/transfer" element={<Transfer />} />
             <Route path="/data-packages" element={<DataPackagePurchase />} />
+            <Route path="/transaction-detail/:id" element={<TransactionDetail />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>

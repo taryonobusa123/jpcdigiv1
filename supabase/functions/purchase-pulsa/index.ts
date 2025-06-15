@@ -1,10 +1,16 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL') ?? '',
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+);
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -25,6 +31,24 @@ serve(async (req) => {
     }
 
     console.log('Processing pulsa purchase:', { transaction_id, ref_id, phone_number, sku, price });
+
+    // Get transaction details first
+    const { data: transaction, error: fetchError } = await supabase
+      .from('pulsa_transactions')
+      .select('user_id')
+      .eq('id', transaction_id)
+      .single();
+
+    if (fetchError || !transaction) {
+      console.error('Error fetching transaction:', fetchError);
+      return new Response(JSON.stringify({ 
+        success: false,
+        message: 'Transaksi tidak ditemukan'
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     // Call Digiflazz transaction API
     const transactionResult = await callDigiflazzTransaction(ref_id, phone_number, sku);
@@ -53,7 +77,7 @@ serve(async (req) => {
     if (transactionResult.success) {
       // Deduct balance from user
       const { error: balanceError } = await supabase.rpc('update_user_balance', {
-        p_user_id: updatedTransaction.user_id,
+        p_user_id: transaction.user_id,
         p_amount: -price,
         p_type: 'purchase',
         p_description: `Pembelian pulsa ${sku} ke ${phone_number}`,
@@ -62,6 +86,8 @@ serve(async (req) => {
 
       if (balanceError) {
         console.error('Error updating balance:', balanceError);
+      } else {
+        console.log('Balance updated successfully for user:', transaction.user_id);
       }
     }
 
