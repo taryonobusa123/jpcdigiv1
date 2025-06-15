@@ -2,6 +2,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+let CryptoJS: any;
+const loadCryptoJs = async () => {
+  if (!CryptoJS) {
+    CryptoJS = (await import('https://esm.sh/crypto-js@4.1.1')).default;
+  }
+};
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -114,7 +121,7 @@ async function callDigiflazzAPI(params: any) {
     throw new Error('Digiflazz credentials not configured');
   }
 
-  // Generate signature
+  // Generate signature using CryptoJS.MD5
   const sign = await generateSignature(username, apiKey, params.ref_id);
   
   const payload = {
@@ -148,11 +155,15 @@ async function callDigiflazzAPI(params: any) {
 
 // Generate MD5 signature for Digiflazz
 async function generateSignature(username: string, apiKey: string, refId: string): Promise<string> {
+  await loadCryptoJs();
   const text = username + apiKey + refId;
-  const encoder = new TextEncoder();
-  const data = encoder.encode(text);
-  const hashBuffer = await crypto.subtle.digest('MD5', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex;
+  try {
+    const hash = CryptoJS.MD5(text).toString();
+    console.log('Generated MD5 signature successfully');
+    return hash;
+  } catch (error) {
+    console.error('Error generating MD5 signature:', error);
+    // fallback
+    return '';
+  }
 }
