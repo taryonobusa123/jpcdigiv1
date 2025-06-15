@@ -68,9 +68,35 @@ export function useBatchUpdatePrices() {
     }) => {
       console.log('Batch updating product prices:', updates.length, 'products');
 
+      // First, check which products exist
+      const productIds = updates.map(update => update.id);
+      const { data: existingProducts, error: checkError } = await supabase
+        .from('products')
+        .select('id')
+        .in('id', productIds);
+
+      if (checkError) {
+        console.error('Error checking existing products:', checkError);
+        throw checkError;
+      }
+
+      const existingIds = new Set(existingProducts?.map(p => p.id) || []);
+      const validUpdates = updates.filter(update => existingIds.has(update.id));
+      const invalidIds = updates.filter(update => !existingIds.has(update.id)).map(u => u.id);
+
+      if (invalidIds.length > 0) {
+        console.warn('Products not found:', invalidIds);
+      }
+
+      if (validUpdates.length === 0) {
+        throw new Error('Tidak ada produk valid untuk diupdate');
+      }
+
+      console.log('Valid updates:', validUpdates.length, 'Invalid:', invalidIds.length);
+
       // Use Promise.allSettled for better error handling and to continue with successful updates
       const results = await Promise.allSettled(
-        updates.map(async (update) => {
+        validUpdates.map(async (update) => {
           console.log('Updating product:', update.id, 'with price:', update.buyer_price);
           
           const { data, error } = await supabase
@@ -80,8 +106,7 @@ export function useBatchUpdatePrices() {
               updated_at: new Date().toISOString(),
             })
             .eq('id', update.id)
-            .select()
-            .single();
+            .select();
 
           if (error) {
             console.error('Error updating product:', update.id, error);
@@ -98,8 +123,10 @@ export function useBatchUpdatePrices() {
 
       console.log('Batch update results:', {
         total: updates.length,
+        validProducts: validUpdates.length,
         successful: successful.length,
-        failed: failed.length
+        failed: failed.length,
+        invalidProducts: invalidIds.length
       });
 
       if (failed.length > 0) {
@@ -110,7 +137,8 @@ export function useBatchUpdatePrices() {
         success: true, 
         updated: successful.length, 
         failed: failed.length,
-        total: updates.length 
+        total: updates.length,
+        invalid: invalidIds.length
       };
     },
     onSuccess: (data) => {
@@ -125,11 +153,15 @@ export function useBatchUpdatePrices() {
         queryClient.refetchQueries({ queryKey: ['products'] });
       }, 100);
       
+      const message = data.invalid > 0 
+        ? `${data.updated} produk berhasil diupdate, ${data.failed} gagal, ${data.invalid} produk tidak ditemukan`
+        : data.failed > 0 
+          ? `${data.updated} produk berhasil diupdate, ${data.failed} gagal`
+          : `${data.updated} produk berhasil diupdate`;
+      
       toast({
         title: "Berhasil",
-        description: data.failed > 0 
-          ? `${data.updated} produk berhasil diupdate, ${data.failed} gagal`
-          : `${data.updated} produk berhasil diupdate`,
+        description: message,
         variant: data.failed > 0 ? "destructive" : "default",
       });
     },
