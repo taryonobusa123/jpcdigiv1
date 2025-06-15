@@ -1,38 +1,31 @@
 
 import React, { useState } from 'react';
-import { useDataPackages, useDataOperators } from '@/hooks/useDataPackages';
+import { useDataPackages } from '@/hooks/useDataPackages';
 import { useDataPackagePurchase } from '@/hooks/useDataPackagePurchase';
 import { useAuth } from '@/hooks/useAuth';
 import BottomNavigation from '@/components/BottomNavigation';
 import DataPackageHeader from '@/components/data-packages/DataPackageHeader';
 import PhoneNumberInput from '@/components/data-packages/PhoneNumberInput';
-import OperatorSelector from '@/components/data-packages/OperatorSelector';
 import PackageSearch from '@/components/data-packages/PackageSearch';
 import PackageList from '@/components/data-packages/PackageList';
 import PurchaseSummary from '@/components/data-packages/PurchaseSummary';
 
 const DataPackagePurchase = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [selectedOperator, setSelectedOperator] = useState('');
   const [detectedOperator, setDetectedOperator] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   const { user, profile } = useAuth();
-  const { data: operators = [] } = useDataOperators();
   
-  // Use detected operator if no manual selection, otherwise use selected operator
-  const effectiveOperator = selectedOperator || detectedOperator;
-  const { data: packages = [], isLoading } = useDataPackages(effectiveOperator);
+  // Data packages filtered only by automatically detected operator
+  const { data: packages = [], isLoading } = useDataPackages(detectedOperator);
   const purchaseMutation = useDataPackagePurchase();
 
   const handleOperatorDetected = (operator: string) => {
     console.log('Operator detected:', operator);
     setDetectedOperator(operator);
-    // Reset manual selection when operator is auto-detected
-    if (operator) {
-      setSelectedOperator('');
-    }
+    // Tidak perlu reset manual operator, karena tidak ada manual selector sekarang
   };
 
   const handlePurchase = async () => {
@@ -52,7 +45,6 @@ const DataPackagePurchase = () => {
       // Reset form after successful purchase
       setPhoneNumber('');
       setSelectedProduct(null);
-      setSelectedOperator('');
       setDetectedOperator('');
     } catch (error) {
       console.error('Purchase failed:', error);
@@ -73,12 +65,6 @@ const DataPackagePurchase = () => {
           phoneNumber={phoneNumber} 
           setPhoneNumber={setPhoneNumber}
           onOperatorDetected={handleOperatorDetected}
-        />
-
-        <OperatorSelector 
-          operators={operators}
-          selectedOperator={selectedOperator}
-          setSelectedOperator={setSelectedOperator}
         />
 
         {packages.length > 0 && (
@@ -111,3 +97,4 @@ const DataPackagePurchase = () => {
 };
 
 export default DataPackagePurchase;
+
