@@ -116,6 +116,9 @@ serve(async (req) => {
       });
     }
 
+    // Import dari utils baru
+    import { callDigiflazzAPI } from './utils/callDigiflazzAPI.ts';
+
     // Call Digiflazz API
     let digiflazzResponse;
     try {
