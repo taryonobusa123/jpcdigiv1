@@ -13,20 +13,20 @@ const ProofUpload = ({ proofImage, onProofImageChange }: ProofUploadProps) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Bukti Transfer (Opsional)</CardTitle>
+        <CardTitle className="text-lg">Kode Referensi Transfer (Opsional)</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          <Label htmlFor="proof-image">Link gambar bukti transfer</Label>
+          <Label htmlFor="ref-code">Kode referensi transfer</Label>
           <Input
-            id="proof-image"
-            type="url"
-            placeholder="https://example.com/bukti-transfer.jpg"
+            id="ref-code"
+            type="text"
+            placeholder="Masukkan kode referensi transfer"
             value={proofImage}
             onChange={(e) => onProofImageChange(e.target.value)}
           />
           <p className="text-sm text-gray-500">
-            Upload bukti transfer ke layanan hosting gambar dan masukkan linknya di sini
+            Masukkan kode referensi transfer yang diberikan oleh bank atau aplikasi pembayaran
           </p>
         </div>
       </CardContent>

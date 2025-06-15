@@ -16,7 +16,7 @@ const TopupSaldo = () => {
   const createTopupRequest = useCreateTopupRequest();
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('bank_transfer');
-  const [proofImage, setProofImage] = useState('');
+  const [refCode, setRefCode] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,13 +29,13 @@ const TopupSaldo = () => {
       await createTopupRequest.mutateAsync({
         amount: parseInt(amount),
         payment_method: paymentMethod,
-        proof_image: proofImage,
+        proof_image: refCode,
       });
       
       // Reset form
       setAmount('');
       setPaymentMethod('bank_transfer');
-      setProofImage('');
+      setRefCode('');
     } catch (error) {
       console.error('Top up request error:', error);
     }
@@ -60,8 +60,8 @@ const TopupSaldo = () => {
           />
           
           <ProofUpload 
-            proofImage={proofImage} 
-            onProofImageChange={setProofImage} 
+            proofImage={refCode} 
+            onProofImageChange={setRefCode} 
           />
 
           <Button
