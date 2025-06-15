@@ -2,94 +2,17 @@
 import React, { useState } from 'react';
 import { 
   Calendar, Filter, Search, CheckCircle, Clock, XCircle, 
-  ArrowUpRight, ArrowDownLeft, Zap, Smartphone, Wifi
+  ArrowUpRight, ArrowDownLeft, Zap, Smartphone, Wifi, DollarSign
 } from 'lucide-react';
 import BottomNavigation from '../components/BottomNavigation';
+import { useTransactions } from '@/hooks/useTransactions';
+import { useAuth } from '@/hooks/useAuth';
 
 const History = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-
-  const transactions = [
-    {
-      id: '1',
-      type: 'PLN Token',
-      category: 'listrik',
-      amount: '-Rp 100.000',
-      status: 'success',
-      date: '2024-01-15',
-      time: '14:30',
-      icon: Zap,
-      iconColor: 'text-yellow-600',
-      iconBg: 'bg-yellow-100',
-      description: 'Token Listrik 20 Digit'
-    },
-    {
-      id: '2',
-      type: 'Top Up Saldo',
-      category: 'topup',
-      amount: '+Rp 500.000',
-      status: 'success',
-      date: '2024-01-15',
-      time: '10:15',
-      icon: ArrowDownLeft,
-      iconColor: 'text-green-600',
-      iconBg: 'bg-green-100',
-      description: 'Transfer dari BCA'
-    },
-    {
-      id: '3',
-      type: 'Pulsa Telkomsel',
-      category: 'pulsa',
-      amount: '-Rp 25.000',
-      status: 'success',
-      date: '2024-01-14',
-      time: '16:45',
-      icon: Smartphone,
-      iconColor: 'text-blue-600',
-      iconBg: 'bg-blue-100',
-      description: '0812-3456-7890'
-    },
-    {
-      id: '4',
-      type: 'IndiHome',
-      category: 'internet',
-      amount: '-Rp 350.000',
-      status: 'pending',
-      date: '2024-01-14',
-      time: '09:20',
-      icon: Wifi,
-      iconColor: 'text-purple-600',
-      iconBg: 'bg-purple-100',
-      description: 'Tagihan Bulan Januari'
-    },
-    {
-      id: '5',
-      type: 'Transfer Bank',
-      category: 'transfer',
-      amount: '-Rp 200.000',
-      status: 'failed',
-      date: '2024-01-13',
-      time: '20:10',
-      icon: ArrowUpRight,
-      iconColor: 'text-red-600',
-      iconBg: 'bg-red-100',
-      description: 'Transfer ke BNI'
-    },
-    {
-      id: '6',
-      type: 'BPJS Kesehatan',
-      category: 'bpjs',
-      amount: '-Rp 42.000',
-      status: 'success',
-      date: '2024-01-13',
-      time: '11:30',
-      icon: CheckCircle,
-      iconColor: 'text-green-600',
-      iconBg: 'bg-green-100',
-      description: 'Iuran Bulanan'
-    }
-  ];
+  const { user } = useAuth();
+  const { data: transactions = [], isLoading, error } = useTransactions();
 
   const tabs = [
     { id: 'all', label: 'Semua' },
@@ -97,6 +20,24 @@ const History = () => {
     { id: 'pending', label: 'Pending' },
     { id: 'failed', label: 'Gagal' }
   ];
+
+  const getTransactionIcon = (category: string, type: string) => {
+    if (category === 'pulsa') return Smartphone;
+    if (type.toLowerCase().includes('pln') || type.toLowerCase().includes('listrik')) return Zap;
+    if (type.toLowerCase().includes('internet') || type.toLowerCase().includes('wifi')) return Wifi;
+    if (type.toLowerCase().includes('transfer')) return ArrowUpRight;
+    if (type.toLowerCase().includes('topup') || type.toLowerCase().includes('saldo')) return ArrowDownLeft;
+    return DollarSign;
+  };
+
+  const getIconColor = (category: string, type: string) => {
+    if (category === 'pulsa') return { color: 'text-blue-600', bg: 'bg-blue-100' };
+    if (type.toLowerCase().includes('pln') || type.toLowerCase().includes('listrik')) return { color: 'text-yellow-600', bg: 'bg-yellow-100' };
+    if (type.toLowerCase().includes('internet') || type.toLowerCase().includes('wifi')) return { color: 'text-purple-600', bg: 'bg-purple-100' };
+    if (type.toLowerCase().includes('transfer')) return { color: 'text-red-600', bg: 'bg-red-100' };
+    if (type.toLowerCase().includes('topup') || type.toLowerCase().includes('saldo')) return { color: 'text-green-600', bg: 'bg-green-100' };
+    return { color: 'text-gray-600', bg: 'bg-gray-100' };
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -107,7 +48,7 @@ const History = () => {
       case 'failed':
         return <XCircle className="w-4 h-4 text-red-600" />;
       default:
-        return null;
+        return <Clock className="w-4 h-4 text-yellow-600" />;
     }
   };
 
@@ -120,7 +61,7 @@ const History = () => {
       case 'failed':
         return 'Gagal';
       default:
-        return '';
+        return 'Pending';
     }
   };
 
@@ -133,7 +74,7 @@ const History = () => {
       case 'failed':
         return 'text-red-600';
       default:
-        return 'text-gray-600';
+        return 'text-yellow-600';
     }
   };
 
@@ -143,6 +84,25 @@ const History = () => {
                          transaction.description.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesTab && matchesSearch;
   });
+
+  // Show login prompt if user is not authenticated
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 pb-20">
+        <div className="bg-white border-b border-gray-200 p-4">
+          <h1 className="text-xl font-bold text-gray-800">Riwayat Transaksi</h1>
+        </div>
+        <div className="flex flex-col items-center justify-center p-8 text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <Search className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-800 mb-2">Login Diperlukan</h3>
+          <p className="text-gray-500">Silakan login untuk melihat riwayat transaksi Anda</p>
+        </div>
+        <BottomNavigation />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -192,48 +152,74 @@ const History = () => {
 
       {/* Transaction List */}
       <div className="p-4">
-        {filteredTransactions.length === 0 ? (
+        {isLoading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <XCircle className="w-8 h-8 text-red-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-800 mb-2">Terjadi Kesalahan</h3>
+            <p className="text-gray-500">Gagal memuat riwayat transaksi</p>
+          </div>
+        ) : filteredTransactions.length === 0 ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="w-8 h-8 text-gray-400" />
             </div>
-            <h3 className="text-lg font-medium text-gray-800 mb-2">Tidak ada transaksi</h3>
-            <p className="text-gray-500">Coba ubah filter atau kata kunci pencarian</p>
+            <h3 className="text-lg font-medium text-gray-800 mb-2">
+              {transactions.length === 0 ? 'Belum ada transaksi' : 'Tidak ada transaksi'}
+            </h3>
+            <p className="text-gray-500">
+              {transactions.length === 0 
+                ? 'Mulai bertransaksi untuk melihat riwayat di sini'
+                : 'Coba ubah filter atau kata kunci pencarian'
+              }
+            </p>
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredTransactions.map((transaction) => (
-              <div key={transaction.id} className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
-                <div className="flex items-center space-x-3">
-                  <div className={`p-2.5 rounded-lg ${transaction.iconBg}`}>
-                    <transaction.icon className={`w-5 h-5 ${transaction.iconColor}`} />
-                  </div>
-                  
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <h4 className="font-semibold text-gray-800 text-sm">{transaction.type}</h4>
-                      <span className={`font-bold text-sm ${
-                        transaction.amount.startsWith('+') ? 'text-green-600' : 'text-gray-800'
-                      }`}>
-                        {transaction.amount}
-                      </span>
+            {filteredTransactions.map((transaction) => {
+              const IconComponent = getTransactionIcon(transaction.category, transaction.type);
+              const iconColors = getIconColor(transaction.category, transaction.type);
+              
+              return (
+                <div key={transaction.id} className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-2.5 rounded-lg ${iconColors.bg}`}>
+                      <IconComponent className={`w-5 h-5 ${iconColors.color}`} />
                     </div>
                     
-                    <p className="text-gray-500 text-xs mb-2">{transaction.description}</p>
-                    
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-400 text-xs">
-                        {transaction.date} • {transaction.time}
-                      </span>
-                      <div className={`flex items-center space-x-1 ${getStatusColor(transaction.status)}`}>
-                        {getStatusIcon(transaction.status)}
-                        <span className="text-xs font-medium">{getStatusText(transaction.status)}</span>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <h4 className="font-semibold text-gray-800 text-sm">{transaction.type}</h4>
+                        <span className="font-bold text-sm text-gray-800">
+                          {transaction.amount}
+                        </span>
+                      </div>
+                      
+                      <p className="text-gray-500 text-xs mb-2">{transaction.description}</p>
+                      
+                      {transaction.ref_id && (
+                        <p className="text-gray-400 text-xs mb-1">ID: {transaction.ref_id}</p>
+                      )}
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-400 text-xs">
+                          {transaction.date} • {transaction.time}
+                        </span>
+                        <div className={`flex items-center space-x-1 ${getStatusColor(transaction.status)}`}>
+                          {getStatusIcon(transaction.status)}
+                          <span className="text-xs font-medium">{getStatusText(transaction.status)}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

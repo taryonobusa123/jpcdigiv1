@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,14 +11,64 @@ export function useTransactions() {
     queryFn: async () => {
       if (!user) throw new Error('Not authenticated');
 
-      const { data, error } = await supabase
+      // Fetch regular transactions
+      const { data: transactions, error: transactionsError } = await supabase
         .from('transactions')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data;
+      if (transactionsError) throw transactionsError;
+
+      // Fetch pulsa transactions
+      const { data: pulsaTransactions, error: pulsaError } = await supabase
+        .from('pulsa_transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (pulsaError) throw pulsaError;
+
+      // Combine and format all transactions
+      const allTransactions = [
+        ...(transactions || []).map(tx => ({
+          id: tx.id,
+          type: tx.product_name,
+          category: 'general',
+          amount: `-Rp ${tx.price.toLocaleString('id-ID')}`,
+          status: tx.status || 'pending',
+          date: new Date(tx.created_at || '').toLocaleDateString('id-ID'),
+          time: new Date(tx.created_at || '').toLocaleTimeString('id-ID', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          }),
+          description: tx.customer_id,
+          ref_id: tx.ref_id,
+          serial_number: tx.serial_number,
+          message: tx.message
+        })),
+        ...(pulsaTransactions || []).map(tx => ({
+          id: tx.id,
+          type: tx.product_name,
+          category: 'pulsa',
+          amount: `-Rp ${tx.price.toLocaleString('id-ID')}`,
+          status: tx.status || 'pending',
+          date: new Date(tx.created_at || '').toLocaleDateString('id-ID'),
+          time: new Date(tx.created_at || '').toLocaleTimeString('id-ID', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          }),
+          description: tx.phone_number,
+          ref_id: tx.ref_id,
+          serial_number: tx.serial_number,
+          message: tx.message
+        }))
+      ];
+
+      // Sort by created_at descending
+      allTransactions.sort((a, b) => new Date(b.date + ' ' + b.time).getTime() - new Date(a.date + ' ' + a.time).getTime());
+
+      return allTransactions;
     },
     enabled: !!user,
   });
