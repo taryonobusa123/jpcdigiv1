@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useCreateTopupRequest } from '@/hooks/useTopup';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ import LoadingScreen from '../components/LoadingScreen';
 
 const TopupSaldo = () => {
   const { user, profile } = useAuth();
+  const navigate = useNavigate();
   const createTopupRequest = useCreateTopupRequest();
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('bank_transfer');
@@ -27,16 +29,14 @@ const TopupSaldo = () => {
     }
 
     try {
-      await createTopupRequest.mutateAsync({
+      const result = await createTopupRequest.mutateAsync({
         amount: parseInt(amount),
         payment_method: paymentMethod,
         proof_image: refCode,
       });
       
-      // Reset form
-      setAmount('');
-      setPaymentMethod('bank_transfer');
-      setRefCode('');
+      // Navigate to detail page with the topup request ID
+      navigate(`/topup-detail/${result.id}`);
     } catch (error) {
       console.error('Top up request error:', error);
     }

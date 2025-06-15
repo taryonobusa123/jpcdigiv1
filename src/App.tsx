@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,6 +24,7 @@ import WhatsAppVerificationPage from "@/pages/WhatsAppVerification";
 import TopUp from "@/pages/TopUp";
 import TopupSaldo from "@/pages/TopupSaldo";
 import TopupHistory from "@/pages/TopupHistory";
+import TopupDetail from "@/pages/TopupDetail";
 import Transfer from "@/pages/Transfer";
 import DataPackagePurchase from "@/pages/DataPackagePurchase";
 
@@ -55,6 +57,7 @@ const App = () => (
             <Route path="/topup" element={<TopUp />} />
             <Route path="/topup-saldo" element={<TopupSaldo />} />
             <Route path="/topup-history" element={<TopupHistory />} />
+            <Route path="/topup-detail/:id" element={<TopupDetail />} />
             <Route path="/transfer" element={<Transfer />} />
             <Route path="/data-packages" element={<DataPackagePurchase />} />
           </Routes>
