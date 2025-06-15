@@ -1,12 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { useUpdateProductPrice, useBatchUpdatePrices } from '@/hooks/useProductPricing';
-import { Edit, Save, X, DollarSign, TrendingUp } from 'lucide-react';
+import ProductPricingHeader from './pricing/ProductPricingHeader';
+import BatchUpdateControls from './pricing/BatchUpdateControls';
+import ProductPricingTable from './pricing/ProductPricingTable';
 
 interface Product {
   id: string;
@@ -141,9 +139,7 @@ export default function ProductPricingManager({ products, isLoading }: ProductPr
   if (isLoading) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>Pengaturan Harga Produk</CardTitle>
-        </CardHeader>
+        <ProductPricingHeader />
         <CardContent>
           <div className="text-center py-4">Loading...</div>
         </CardContent>
@@ -153,150 +149,32 @@ export default function ProductPricingManager({ products, isLoading }: ProductPr
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <DollarSign className="w-5 h-5" />
-          <span>Pengaturan Harga Produk</span>
-        </CardTitle>
-      </CardHeader>
+      <ProductPricingHeader />
       <CardContent>
-        {/* Batch Update Controls */}
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-          <h3 className="text-lg font-semibold mb-3 flex items-center">
-            <TrendingUp className="w-5 h-5 mr-2" />
-            Update Margin Massal
-          </h3>
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium">Margin (%):</label>
-              <Input
-                type="number"
-                value={marginPercentage}
-                onChange={(e) => setMarginPercentage(Number(e.target.value))}
-                className="w-20"
-                min="0"
-                step="0.1"
-              />
-            </div>
-            <Button
-              onClick={handleBatchMarginUpdate}
-              disabled={selectedProducts.size === 0 || batchUpdatePrices.isPending}
-              variant="outline"
-            >
-              {batchUpdatePrices.isPending ? 'Updating...' : `Update ${selectedProducts.size} Produk Terpilih`}
-            </Button>
-            {selectedProducts.size > 0 && (
-              <Button
-                onClick={() => setSelectedProducts(new Set())}
-                variant="ghost"
-                size="sm"
-              >
-                Clear Selection
-              </Button>
-            )}
-          </div>
-        </div>
+        <BatchUpdateControls
+          marginPercentage={marginPercentage}
+          setMarginPercentage={setMarginPercentage}
+          selectedProducts={selectedProducts}
+          setSelectedProducts={setSelectedProducts}
+          onBatchUpdate={handleBatchMarginUpdate}
+          isUpdating={batchUpdatePrices.isPending}
+        />
 
-        {/* Products Table */}
-        <div className="max-h-96 overflow-y-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">
-                  <input
-                    type="checkbox"
-                    onChange={(e) => handleSelectAll(e.target.checked)}
-                    checked={selectedProducts.size === displayProducts.length && displayProducts.length > 0}
-                  />
-                </TableHead>
-                <TableHead>SKU</TableHead>
-                <TableHead>Produk</TableHead>
-                <TableHead>Kategori</TableHead>
-                <TableHead>Brand</TableHead>
-                <TableHead>Harga Modal</TableHead>
-                <TableHead>Harga Jual</TableHead>
-                <TableHead>Margin</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Aksi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {displayProducts?.slice(0, 100).map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell>
-                    <input
-                      type="checkbox"
-                      checked={selectedProducts.has(product.id)}
-                      onChange={() => handleProductSelect(product.id)}
-                    />
-                  </TableCell>
-                  <TableCell className="font-mono text-xs">{product.sku}</TableCell>
-                  <TableCell className="max-w-xs truncate">{product.product_name}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{product.category}</Badge>
-                  </TableCell>
-                  <TableCell>{product.brand}</TableCell>
-                  <TableCell>{formatCurrency(product.seller_price)}</TableCell>
-                  <TableCell>
-                    {editingProduct === product.id ? (
-                      <Input
-                        type="number"
-                        value={editPrice}
-                        onChange={(e) => setEditPrice(Number(e.target.value))}
-                        className="w-32"
-                        min={product.seller_price}
-                      />
-                    ) : (
-                      formatCurrency(product.buyer_price)
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={
-                      Number(calculateMargin(product.seller_price, product.buyer_price)) > 0 
-                        ? 'default' 
-                        : 'destructive'
-                    }>
-                      {calculateMargin(product.seller_price, product.buyer_price)}%
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={product.is_active ? 'default' : 'secondary'}>
-                      {product.is_active ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {editingProduct === product.id ? (
-                      <div className="flex space-x-1">
-                        <Button
-                          size="sm"
-                          onClick={handleEditSave}
-                          disabled={updateProductPrice.isPending}
-                        >
-                          <Save className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={handleEditCancel}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEditStart(product)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <ProductPricingTable
+          products={displayProducts}
+          selectedProducts={selectedProducts}
+          onProductSelect={handleProductSelect}
+          onSelectAll={handleSelectAll}
+          editingProduct={editingProduct}
+          editPrice={editPrice}
+          setEditPrice={setEditPrice}
+          onEditStart={handleEditStart}
+          onEditSave={handleEditSave}
+          onEditCancel={handleEditCancel}
+          isUpdating={updateProductPrice.isPending}
+          formatCurrency={formatCurrency}
+          calculateMargin={calculateMargin}
+        />
 
         {displayProducts && displayProducts.length > 100 && (
           <div className="mt-4 text-sm text-gray-500 text-center">
