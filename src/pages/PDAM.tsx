@@ -3,30 +3,23 @@ import React, { useState } from 'react';
 import { ArrowLeft, Droplets, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { usePDAMCheck } from '@/hooks/usePDAMCheck';
+import { usePDAMProducts } from '@/hooks/usePDAMProducts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
-const REGIONS = [
-  'PDAM Jakarta',
-  'PDAM Surabaya',
-  'PDAM Bandung',
-  'PDAM Semarang',
-  'PDAM Medan',
-  'PDAM Makassar'
-];
-
 const PDAM = () => {
-  const [selectedRegion, setSelectedRegion] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [customerNumber, setCustomerNumber] = useState('');
-  
   const [customerData, setCustomerData] = useState<any>(null);
-  // Fix: use isPending instead of isLoading
+
+  const { data: products, isLoading: isLoadingProducts, error: productError } = usePDAMProducts();
   const { mutate, isPending } = usePDAMCheck();
 
   const handleCheck = () => {
     setCustomerData(null);
+    if (!selectedProduct) return;
     mutate(
-      { wilayah: selectedRegion, nomorPelanggan: customerNumber },
+      { wilayah: selectedProduct.buyer_sku_code, nomorPelanggan: customerNumber },
       {
         onSuccess: (data: any) => {
           setCustomerData(data.data);
@@ -48,30 +41,40 @@ const PDAM = () => {
           </h1>
         </div>
       </div>
-      {/* Form */}
+      {/* Produk Wilayah */}
       <div className="p-4 space-y-4">
         <div className="bg-white rounded-xl shadow-md p-4 mb-3">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            Pilih Wilayah
+            Pilih Wilayah PDAM
           </h3>
-          <div className="space-y-2">
-            {REGIONS.map((region) => (
+          {isLoadingProducts && (
+            <div className="text-gray-500 text-center">Memuat produk PDAM...</div>
+          )}
+          {productError && (
+            <div className="text-red-500 text-center">Gagal memuat produk PDAM</div>
+          )}
+          <div className="space-y-2 max-h-72 overflow-auto">
+            {products && products.map((product: any) => (
               <button
-                key={region}
+                key={product.buyer_sku_code}
                 type="button"
-                onClick={() => setSelectedRegion(region)}
+                onClick={() => setSelectedProduct(product)}
                 className={`w-full p-3 rounded-lg border-2 text-left transition-colors ${
-                  selectedRegion === region
+                  selectedProduct?.buyer_sku_code === product.buyer_sku_code
                     ? 'border-blue-500 bg-blue-50 font-bold'
                     : 'border-gray-200 hover:border-blue-300'
                 }`}
               >
-                {region}
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">{product.product_name}</span>
+                  <span className="text-xs text-blue-500">{product.buyer_sku_code}</span>
+                </div>
+                <div className="text-gray-500 text-sm">{product.desc}</div>
               </button>
             ))}
           </div>
         </div>
-        {selectedRegion && (
+        {selectedProduct && (
           <div className="bg-white rounded-xl shadow-md p-4">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">
               Nomor Pelanggan
@@ -121,7 +124,7 @@ const PDAM = () => {
                   Nama: {customerData.customer_name || '-'}
                 </div>
                 <div className="text-gray-700 mb-1">
-                  Wilayah: {selectedRegion}
+                  Wilayah: {selectedProduct.product_name}
                 </div>
                 <div className="text-gray-700 mb-1">
                   Nomor Pelanggan: {customerData.customer_number || customerNumber}
@@ -139,4 +142,3 @@ const PDAM = () => {
 };
 
 export default PDAM;
-
