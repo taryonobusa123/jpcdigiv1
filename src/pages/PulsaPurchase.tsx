@@ -21,8 +21,14 @@ const PulsaPurchase = () => {
   const pulsaPurchase = usePulsaPurchase();
 
   const handlePurchase = () => {
-    if (!selectedProduct || !phoneNumber) {
-      alert('Silakan lengkapi semua data');
+    console.log('Purchase button clicked');
+    console.log('Selected product:', selectedProduct);
+    console.log('Phone number:', phoneNumber);
+    console.log('User:', user);
+    console.log('Profile balance:', profile?.balance);
+
+    if (!selectedProduct || !phoneNumber.trim()) {
+      alert('Silakan lengkapi nomor telepon dan pilih nominal pulsa');
       return;
     }
 
@@ -31,6 +37,12 @@ const PulsaPurchase = () => {
       return;
     }
 
+    if (!profile || profile.balance < selectedProduct.price) {
+      alert('Saldo tidak mencukupi untuk melakukan pembelian');
+      return;
+    }
+
+    console.log('Starting purchase mutation...');
     pulsaPurchase.mutate({
       phone_number: phoneNumber,
       operator: selectedOperator,
@@ -91,6 +103,9 @@ const PulsaPurchase = () => {
     }
   };
 
+  const isFormValid = selectedProduct && phoneNumber.trim() && user;
+  const hasSufficientBalance = profile && profile.balance >= (selectedProduct?.price || 0);
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
@@ -116,6 +131,15 @@ const PulsaPurchase = () => {
                 {formatCurrency(profile.balance)}
               </span>
             </div>
+          </div>
+        )}
+
+        {/* Login Notice */}
+        {!user && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+            <p className="text-yellow-800 text-sm">
+              Silakan login terlebih dahulu untuk melakukan pembelian pulsa.
+            </p>
           </div>
         )}
 
@@ -153,6 +177,7 @@ const PulsaPurchase = () => {
                 <button
                   key={operator}
                   onClick={() => {
+                    console.log('Operator selected:', operator);
                     setSelectedOperator(operator);
                     setSelectedProduct(null);
                   }}
@@ -182,7 +207,10 @@ const PulsaPurchase = () => {
                 {products?.map((product) => (
                   <button
                     key={product.id}
-                    onClick={() => setSelectedProduct(product)}
+                    onClick={() => {
+                      console.log('Product selected:', product);
+                      setSelectedProduct(product);
+                    }}
                     className={`w-full p-4 rounded-lg border-2 text-left transition-colors ${
                       selectedProduct?.id === product.id
                         ? 'border-green-500 bg-green-50'
@@ -207,7 +235,7 @@ const PulsaPurchase = () => {
           </div>
         )}
 
-        {/* Purchase Button */}
+        {/* Purchase Summary & Button */}
         {selectedProduct && phoneNumber && (
           <div className="bg-white rounded-xl shadow-md p-4">
             <div className="mb-4">
@@ -219,14 +247,32 @@ const PulsaPurchase = () => {
                 <p>Harga: {formatCurrency(selectedProduct.price)}</p>
               </div>
             </div>
+
+            {/* Balance warning */}
+            {profile && !hasSufficientBalance && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-800 text-sm">
+                  Saldo tidak mencukupi. Saldo Anda: {formatCurrency(profile.balance)}, 
+                  diperlukan: {formatCurrency(selectedProduct.price)}
+                </p>
+              </div>
+            )}
             
             <Button
               onClick={handlePurchase}
-              disabled={pulsaPurchase.isPending || !user}
-              className="w-full bg-green-500 hover:bg-green-600 text-white py-3 text-lg font-semibold"
+              disabled={pulsaPurchase.isPending || !isFormValid || !hasSufficientBalance}
+              className={`w-full py-3 text-lg font-semibold transition-colors ${
+                pulsaPurchase.isPending || !isFormValid || !hasSufficientBalance
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-green-500 hover:bg-green-600 text-white'
+              }`}
             >
               {pulsaPurchase.isPending 
                 ? 'Memproses...' 
+                : !user
+                ? 'Login Diperlukan'
+                : !hasSufficientBalance
+                ? 'Saldo Tidak Mencukupi'
                 : `Beli Sekarang - ${formatCurrency(selectedProduct.price)}`
               }
             </Button>
