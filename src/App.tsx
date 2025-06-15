@@ -7,6 +7,7 @@ import Index from '@/pages/Index';
 import ProductList from '@/pages/ProductList';
 import Admin from '@/pages/Admin';
 import TestPurchase from '@/pages/TestPurchase';
+import PLNToken from '@/pages/PLNToken';
 
 const queryClient = new QueryClient();
 
@@ -20,6 +21,7 @@ function App() {
             <Route path="/products" element={<ProductList />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/test-purchase" element={<TestPurchase />} />
+            <Route path="/pln-token" element={<PLNToken />} />
           </Routes>
           <Toaster />
         </Router>
