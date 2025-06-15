@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,8 +31,13 @@ interface Product {
   product_name: string;
   category: string;
   brand: string;
+  type: string;
   seller_price: number;
   buyer_price: number;
+  buyer_sku_code?: string;
+  description?: string;
+  start_cut_off?: string;
+  end_cut_off?: string;
   is_active: boolean;
 }
 

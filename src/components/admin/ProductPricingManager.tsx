@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUpdateProductPrice, useBatchUpdatePrices } from '@/hooks/useProductPricing';
@@ -14,8 +13,13 @@ interface Product {
   product_name: string;
   category: string;
   brand: string;
+  type: string;
   seller_price: number;
   buyer_price: number;
+  buyer_sku_code?: string;
+  description?: string;
+  start_cut_off?: string;
+  end_cut_off?: string;
   is_active: boolean;
 }
 

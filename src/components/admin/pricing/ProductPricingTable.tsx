@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import ProductRow from './ProductRow';
@@ -9,8 +8,13 @@ interface Product {
   product_name: string;
   category: string;
   brand: string;
+  type: string;
   seller_price: number;
   buyer_price: number;
+  buyer_sku_code?: string;
+  description?: string;
+  start_cut_off?: string;
+  end_cut_off?: string;
   is_active: boolean;
 }
 
