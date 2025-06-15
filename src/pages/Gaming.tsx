@@ -11,27 +11,32 @@ import { useIsMobile } from '@/hooks/use-mobile';
 const Gaming = () => {
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedGame, setSelectedGame] = useState('all');
+  const [selectedBrand, setSelectedBrand] = useState('all');
   const { data: products, isLoading, error } = useProducts('gaming');
 
-  const gameTypes = useMemo(() => {
+  // Ambil semua brand unik dari produk
+  const gameBrands = useMemo(() => {
     if (!products) return [];
-    const typesUnique = Array.from(
+    const uniqueBrands = Array.from(
       new Set(
-        products.filter((p) => !!p.type).map((p) => p.type.trim())
+        products
+          .filter((p) => !!p.brand)
+          .map((p) => p.brand.trim())
       )
     );
-    return typesUnique;
+    return uniqueBrands;
   }, [products]);
 
-  const filteredByType = useMemo(() => {
+  // Filter by brand
+  const filteredByBrand = useMemo(() => {
     if (!products) return [];
-    if (selectedGame === 'all') return products;
-    return products.filter((p) => p.type === selectedGame);
-  }, [products, selectedGame]);
+    if (selectedBrand === 'all') return products;
+    return products.filter((p) => p.brand === selectedBrand);
+  }, [products, selectedBrand]);
 
+  // Filter by search
   const filteredProducts =
-    filteredByType?.filter(
+    filteredByBrand?.filter(
       (product) =>
         product.product_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.brand?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -57,14 +62,15 @@ const Gaming = () => {
             <h1 className="text-lg font-bold">Voucher Gaming</h1>
           </div>
           <div className="flex items-center space-x-2 mb-2">
+            {/* Dropdown Brand */}
             <select
               className="flex-1 text-gray-800 rounded-lg py-2 px-2 focus:outline-none text-xs"
-              value={selectedGame}
-              onChange={e => setSelectedGame(e.target.value)}
+              value={selectedBrand}
+              onChange={e => setSelectedBrand(e.target.value)}
             >
-              <option value="all">Semua Game</option>
-              {gameTypes.map((type) => (
-                <option key={type} value={type}>{type}</option>
+              <option value="all">Semua Brand</option>
+              {gameBrands.map((brand) => (
+                <option key={brand} value={brand}>{brand}</option>
               ))}
             </select>
             <div className="relative w-full">
@@ -119,7 +125,7 @@ const Gaming = () => {
     );
   }
 
-  // ====== DESKTOP UI (tetap seperti sebelumnya) ======
+  // ====== DESKTOP UI ======
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4">
@@ -131,14 +137,15 @@ const Gaming = () => {
         </div>
         <div className="flex flex-col md:flex-row md:items-center md:space-x-3 space-y-2 md:space-y-0 mb-2">
           <div>
+            {/* Dropdown Brand */}
             <select
               className="w-full md:w-auto text-gray-800 rounded-lg py-2 px-3 focus:outline-none"
-              value={selectedGame}
-              onChange={e => setSelectedGame(e.target.value)}
+              value={selectedBrand}
+              onChange={e => setSelectedBrand(e.target.value)}
             >
-              <option value="all">Semua Game</option>
-              {gameTypes.map((type) => (
-                <option key={type} value={type}>{type}</option>
+              <option value="all">Semua Brand</option>
+              {gameBrands.map((brand) => (
+                <option key={brand} value={brand}>{brand}</option>
               ))}
             </select>
           </div>
