@@ -2,11 +2,16 @@
 import React from 'react';
 import { 
   User, Settings, Bell, Shield, HelpCircle, LogOut, 
-  ChevronRight, Camera, Star, Gift, CreditCard, Phone
+  ChevronRight, Camera, Star, Gift, CreditCard, Phone, UserPlus
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import BottomNavigation from '../components/BottomNavigation';
+import { useAuth } from '@/hooks/useAuth';
 
 const Profile = () => {
+  const { user, profile, signOut } = useAuth();
+
   const menuItems = [
     {
       icon: User,
@@ -52,6 +57,49 @@ const Profile = () => {
     }
   ];
 
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
+  };
+
+  // If user is not logged in, show login prompt
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 pb-20">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-4">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-xl font-bold">Profil</h1>
+          </div>
+        </div>
+
+        {/* Login Prompt */}
+        <div className="p-4 pt-8">
+          <div className="bg-white rounded-xl shadow-md p-6 text-center">
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <User className="w-10 h-10 text-gray-400" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Belum Login</h3>
+            <p className="text-gray-600 mb-6">
+              Silakan login untuk mengakses profil dan fitur lainnya
+            </p>
+            <Link to="/login">
+              <Button className="w-full bg-green-500 hover:bg-green-600 text-white">
+                <UserPlus className="w-4 h-4 mr-2" />
+                Masuk / Daftar
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        <BottomNavigation />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
@@ -76,9 +124,11 @@ const Profile = () => {
             </div>
             
             <div className="flex-1">
-              <h3 className="text-lg font-bold">Ahmad Fauzi</h3>
-              <p className="text-blue-100 text-sm">+62 812-3456-7890</p>
-              <p className="text-blue-100 text-xs">ahmad.fauzi@email.com</p>
+              <h3 className="text-lg font-bold">{profile?.full_name || 'User'}</h3>
+              {profile?.whatsapp_number && (
+                <p className="text-blue-100 text-sm">{profile.whatsapp_number}</p>
+              )}
+              <p className="text-blue-100 text-xs">{user.email}</p>
               
               <div className="flex items-center space-x-4 mt-2">
                 <div className="flex items-center space-x-1">
@@ -135,7 +185,10 @@ const Profile = () => {
         ))}
 
         {/* Logout Button */}
-        <button className="w-full bg-white rounded-xl shadow-sm p-4 flex items-center space-x-3 hover:bg-red-50 transition-colors active:scale-95 border border-red-100">
+        <button 
+          onClick={handleSignOut}
+          className="w-full bg-white rounded-xl shadow-sm p-4 flex items-center space-x-3 hover:bg-red-50 transition-colors active:scale-95 border border-red-100"
+        >
           <div className="p-2.5 rounded-lg bg-red-100">
             <LogOut className="w-5 h-5 text-red-600" />
           </div>
