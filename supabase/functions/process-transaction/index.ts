@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -230,11 +229,12 @@ async function callDigiflazzAPI(params: any) {
 
   // Generate signature using CryptoJS.MD5
   const sign = await generateSignature(username, apiKey, params.ref_id);
-  
+
+  // SESUAI DOKUMEN DIGIFLAZZ (buyer_sku_code, customer_no, ref_id, sign)
   const payload = {
     username,
-    buyer_sku_code: params.sku,
-    customer_no: params.customer_id,
+    buyer_sku_code: params.sku,        // pastikan ini sesuai dengan field product di database
+    customer_no: params.customer_id,   // map ke field yg benar
     ref_id: params.ref_id,
     sign,
   };
@@ -251,7 +251,12 @@ async function callDigiflazzAPI(params: any) {
     });
 
     const result = await response.json();
-    console.log('Digiflazz API raw response:', result);
+    console.log('Digiflazz API full response:', result);
+    
+    // Forward error detail jika ada
+    if (!result.data) {
+      throw new Error(`Digiflazz API response missing 'data' field! ${JSON.stringify(result)}`);
+    }
     
     return result;
   } catch (error) {
