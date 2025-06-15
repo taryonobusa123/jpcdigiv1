@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import ProductPricingManager from '@/components/admin/ProductPricingManager';
+import AdminSettings from "@/components/admin/AdminSettings";
 import { 
   Users, 
   CreditCard, 
@@ -140,6 +141,7 @@ export default function Admin() {
             <TabsTrigger value="topup-requests">Top Up Requests</TabsTrigger>
             <TabsTrigger value="products">Products</TabsTrigger>
             <TabsTrigger value="pricing">Pricing Management</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
           <TabsContent value="transactions">
@@ -312,6 +314,10 @@ export default function Admin() {
 
           <TabsContent value="pricing">
             <ProductPricingManager />
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <AdminSettings />
           </TabsContent>
         </Tabs>
       </div>
