@@ -16,7 +16,9 @@ const supabase = createClient(
 );
 
 serve(async (req) => {
+  console.log('Edge Function called with method:', req.method);
   if (req.method === 'OPTIONS') {
+    // Always reply immediately for OPTIONS requests
     return new Response('ok', { headers: corsHeaders });
   }
 
@@ -125,6 +127,7 @@ serve(async (req) => {
   } catch (error) {
     const errMessage = `[SERVER ERROR] ${error?.message || error?.toString() || error}`;
     console.error('PLN direct purchase error:', errMessage);
+    // Pastikan SELURUH response error menyertakan CORS
     return new Response(JSON.stringify({ 
       success: false,
       message: errMessage
@@ -134,3 +137,4 @@ serve(async (req) => {
     });
   }
 });
+
