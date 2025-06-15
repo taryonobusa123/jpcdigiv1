@@ -11,14 +11,23 @@ const WhatsAppVerificationPage = () => {
   const navigate = useNavigate();
   const { user, refreshProfile } = useAuth();
   const [isVerified, setIsVerified] = useState(false);
+  const [whatsappNumber, setWhatsappNumber] = useState('');
   
-  const whatsappNumber = searchParams.get('number') || '';
+  const urlWhatsappNumber = searchParams.get('number') || '';
 
   useEffect(() => {
-    if (!whatsappNumber) {
+    // If no WhatsApp number in URL and no user, redirect to login
+    if (!urlWhatsappNumber && !user) {
       navigate('/login');
+      return;
     }
-  }, [whatsappNumber, navigate]);
+    
+    // If WhatsApp number is in URL, use it
+    if (urlWhatsappNumber) {
+      setWhatsappNumber(urlWhatsappNumber);
+    }
+    // If user exists but no WhatsApp number in URL, let them enter it
+  }, [urlWhatsappNumber, user, navigate]);
 
   const handleVerificationComplete = async () => {
     setIsVerified(true);
@@ -28,6 +37,10 @@ const WhatsAppVerificationPage = () => {
     setTimeout(() => {
       navigate('/');
     }, 2000);
+  };
+
+  const handleWhatsAppSubmit = (number: string) => {
+    setWhatsappNumber(number);
   };
 
   if (isVerified) {
@@ -62,6 +75,7 @@ const WhatsAppVerificationPage = () => {
         <WhatsAppVerification
           whatsappNumber={whatsappNumber}
           onVerificationComplete={handleVerificationComplete}
+          onWhatsAppSubmit={handleWhatsAppSubmit}
         />
       </div>
     </div>

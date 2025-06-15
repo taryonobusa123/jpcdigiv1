@@ -40,7 +40,8 @@ const Login = () => {
     setLoading(true);
     try {
       await signIn(email, password);
-      navigate('/');
+      // Redirect to WhatsApp verification instead of home
+      navigate('/verify-whatsapp');
     } catch (error) {
       console.error('Sign in error:', error);
     }
@@ -54,7 +55,7 @@ const Login = () => {
       const formattedWhatsapp = formatWhatsAppNumber(whatsappNumber);
       await signUp(email, password, fullName, formattedWhatsapp);
       
-      // Redirect to WhatsApp verification page
+      // After successful signup, also redirect to WhatsApp verification
       navigate(`/verify-whatsapp?number=${encodeURIComponent(formattedWhatsapp)}`);
     } catch (error) {
       console.error('Sign up error:', error);
