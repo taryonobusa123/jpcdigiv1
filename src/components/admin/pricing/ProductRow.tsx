@@ -4,7 +4,27 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { TableCell, TableRow } from '@/components/ui/table';
-import { Edit, Save, X } from 'lucide-react';
+import { 
+  Edit, 
+  Save, 
+  X, 
+  Trash2, 
+  ToggleLeft, 
+  ToggleRight 
+} from 'lucide-react';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { useDeleteProduct, useToggleProductStatus } from '@/hooks/useProductCrud';
+import ProductForm from './ProductForm';
 
 interface Product {
   id: string;
@@ -46,6 +66,28 @@ export default function ProductRow({
   formatCurrency,
   calculateMargin
 }: ProductRowProps) {
+  const deleteProduct = useDeleteProduct();
+  const toggleProductStatus = useToggleProductStatus();
+
+  const handleDelete = async () => {
+    try {
+      await deleteProduct.mutateAsync(product.id);
+    } catch (error) {
+      console.error('Failed to delete product:', error);
+    }
+  };
+
+  const handleToggleStatus = async () => {
+    try {
+      await toggleProductStatus.mutateAsync({
+        productId: product.id,
+        isActive: !product.is_active,
+      });
+    } catch (error) {
+      console.error('Failed to toggle product status:', error);
+    }
+  };
+
   return (
     <TableRow>
       <TableCell>
@@ -85,37 +127,84 @@ export default function ProductRow({
         </Badge>
       </TableCell>
       <TableCell>
-        <Badge variant={product.is_active ? 'default' : 'secondary'}>
-          {product.is_active ? 'Active' : 'Inactive'}
-        </Badge>
-      </TableCell>
-      <TableCell>
-        {editingProduct === product.id ? (
-          <div className="flex space-x-1">
-            <Button
-              size="sm"
-              onClick={onEditSave}
-              disabled={isUpdating}
-            >
-              <Save className="w-4 h-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onEditCancel}
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-        ) : (
+        <div className="flex items-center">
+          <Badge variant={product.is_active ? 'default' : 'secondary'}>
+            {product.is_active ? 'Active' : 'Inactive'}
+          </Badge>
           <Button
             size="sm"
-            variant="outline"
-            onClick={() => onEditStart(product)}
+            variant="ghost"
+            onClick={handleToggleStatus}
+            disabled={toggleProductStatus.isPending}
+            className="ml-2"
           >
-            <Edit className="w-4 h-4" />
+            {product.is_active ? (
+              <ToggleRight className="w-4 h-4 text-green-600" />
+            ) : (
+              <ToggleLeft className="w-4 h-4 text-gray-400" />
+            )}
           </Button>
-        )}
+        </div>
+      </TableCell>
+      <TableCell>
+        <div className="flex space-x-1">
+          {editingProduct === product.id ? (
+            <>
+              <Button
+                size="sm"
+                onClick={onEditSave}
+                disabled={isUpdating}
+              >
+                <Save className="w-4 h-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onEditCancel}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onEditStart(product)}
+              >
+                <Edit className="w-4 h-4" />
+              </Button>
+              
+              <ProductForm product={product} />
+              
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" variant="destructive">
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Hapus Produk</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Apakah Anda yakin ingin menghapus produk "{product.product_name}"? 
+                      Tindakan ini tidak dapat dibatalkan.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={handleDelete}
+                      disabled={deleteProduct.isPending}
+                    >
+                      {deleteProduct.isPending ? 'Menghapus...' : 'Hapus'}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </>
+          )}
+        </div>
       </TableCell>
     </TableRow>
   );

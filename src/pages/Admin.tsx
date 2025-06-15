@@ -311,10 +311,7 @@ export default function Admin() {
           </TabsContent>
 
           <TabsContent value="pricing">
-            <ProductPricingManager 
-              products={products || []} 
-              isLoading={productsLoading} 
-            />
+            <ProductPricingManager />
           </TabsContent>
         </Tabs>
       </div>

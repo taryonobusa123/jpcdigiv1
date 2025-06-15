@@ -28,6 +28,24 @@ export function useProducts(category?: string) {
   });
 }
 
+export function useAllProducts() {
+  return useQuery({
+    queryKey: ['products', 'all'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+  });
+}
+
 export function useProductCategories() {
   return useQuery({
     queryKey: ['product-categories'],

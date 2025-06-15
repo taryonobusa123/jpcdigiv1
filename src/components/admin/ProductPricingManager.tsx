@@ -2,9 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUpdateProductPrice, useBatchUpdatePrices } from '@/hooks/useProductPricing';
+import { useAllProducts } from '@/hooks/useProducts';
 import ProductPricingHeader from './pricing/ProductPricingHeader';
 import BatchUpdateControls from './pricing/BatchUpdateControls';
 import ProductPricingTable from './pricing/ProductPricingTable';
+import ProductForm from './pricing/ProductForm';
 
 interface Product {
   id: string;
@@ -17,24 +19,23 @@ interface Product {
   is_active: boolean;
 }
 
-interface ProductPricingManagerProps {
-  products: Product[];
-  isLoading: boolean;
-}
-
-export default function ProductPricingManager({ products, isLoading }: ProductPricingManagerProps) {
+export default function ProductPricingManager() {
   const [editingProduct, setEditingProduct] = useState<string | null>(null);
   const [editPrice, setEditPrice] = useState<number>(0);
   const [marginPercentage, setMarginPercentage] = useState<number>(10);
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [displayProducts, setDisplayProducts] = useState<Product[]>([]);
 
+  // Use real Supabase data instead of props
+  const { data: products, isLoading, refetch } = useAllProducts();
   const updateProductPrice = useUpdateProductPrice();
   const batchUpdatePrices = useBatchUpdatePrices();
 
-  // Update display products when props change
+  // Update display products when data changes
   useEffect(() => {
-    setDisplayProducts(products || []);
+    if (products) {
+      setDisplayProducts(products);
+    }
   }, [products]);
 
   const formatCurrency = (amount: number) => {
@@ -136,12 +137,19 @@ export default function ProductPricingManager({ products, isLoading }: ProductPr
     }
   };
 
+  const handleRefresh = () => {
+    refetch();
+  };
+
   if (isLoading) {
     return (
       <Card>
         <ProductPricingHeader />
         <CardContent>
-          <div className="text-center py-4">Loading...</div>
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-2 text-gray-600">Memuat data produk...</p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -151,6 +159,15 @@ export default function ProductPricingManager({ products, isLoading }: ProductPr
     <Card>
       <ProductPricingHeader />
       <CardContent>
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex space-x-2">
+            <ProductForm onSuccess={handleRefresh} />
+          </div>
+          <div className="text-sm text-gray-600">
+            Total: {displayProducts?.length || 0} produk
+          </div>
+        </div>
+
         <BatchUpdateControls
           marginPercentage={marginPercentage}
           setMarginPercentage={setMarginPercentage}
@@ -161,7 +178,7 @@ export default function ProductPricingManager({ products, isLoading }: ProductPr
         />
 
         <ProductPricingTable
-          products={displayProducts}
+          products={displayProducts || []}
           selectedProducts={selectedProducts}
           onProductSelect={handleProductSelect}
           onSelectAll={handleSelectAll}
