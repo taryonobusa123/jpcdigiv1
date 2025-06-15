@@ -47,7 +47,7 @@ export function useDataPackagePurchase() {
           product_name: transaction.product_name,
           price: transaction.price,
           status: 'pending',
-          sn: transaction.sku,
+          sku: transaction.sku,
         })
         .select()
         .single();
