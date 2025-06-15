@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -125,11 +124,25 @@ export function usePlnDirectPurchase() {
         });
       }
     },
-    onError: (error: Error) => {
-      console.error('PLN direct purchase error:', error);
+    onError: (error: Error | any) => {
+      // Tangkap lebih detail error dari Supabase Function
+      let errorMsg = "Terjadi kesalahan server. Silakan coba beberapa saat lagi.";
+      if (error?.message) {
+        errorMsg = error.message;
+      }
+      if (error?.context?.value?.message) {
+        errorMsg = error.context.value.message;
+      }
+      if (typeof error === "string") {
+        errorMsg = error;
+      }
+      if (error?.code === "FunctionsFetchError") {
+        errorMsg = "Tidak dapat menghubungi layanan server PLN. Pastikan server Supabase Edge Function aktif.";
+      }
+
       toast({
         title: "Error",
-        description: error.message,
+        description: errorMsg,
         variant: "destructive",
       });
     },
