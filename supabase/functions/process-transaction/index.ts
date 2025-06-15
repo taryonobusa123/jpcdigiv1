@@ -87,7 +87,15 @@ serve(async (req) => {
       });
     }
 
-    // Deduct balance from user
+    // Deduct balance from user + debug
+    console.log("About to deduct balance, params:", {
+      p_user_id: transaction.user_id,
+      p_amount: -transaction.price,
+      p_type: 'purchase',
+      p_description: `Pembelian ${transaction.product_name}`,
+      p_transaction_id: transaction.id,
+    });
+
     const balanceUpdateResult = await supabaseClient.rpc('update_user_balance', {
       p_user_id: transaction.user_id,
       p_amount: -transaction.price,
@@ -97,8 +105,11 @@ serve(async (req) => {
     });
 
     if (!balanceUpdateResult.data) {
-      console.error('Failed to deduct balance. RPC error:', balanceUpdateResult.error);
-      return new Response(JSON.stringify({ error: 'Failed to deduct balance' }), {
+      console.error('Failed to deduct balance. RPC error:', balanceUpdateResult.error, 'response:', balanceUpdateResult);
+      return new Response(JSON.stringify({ 
+        error: 'Failed to deduct balance',
+        detail: balanceUpdateResult.error ?? balanceUpdateResult,
+      }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -113,6 +124,17 @@ serve(async (req) => {
         ref_id: transaction.ref_id,
       });
       console.log('Digiflazz API Response:', digiflazzResponse);
+
+      // If Digiflazz error
+      if (!digiflazzResponse || digiflazzResponse.data?.status === 'FAILED' || digiflazzResponse.data?.rc === '39') {
+        return new Response(JSON.stringify({ 
+          error: 'Digiflazz API responded with failure',
+          digiflazz_response: digiflazzResponse
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
     } catch (digiflazzErr) {
       console.error('Digiflazz API error:', digiflazzErr);
       return new Response(JSON.stringify({ error: 'Digiflazz API error', detail: digiflazzErr?.message }), {
