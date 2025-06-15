@@ -31,7 +31,7 @@ const PLNPurchaseConfirmation = ({
   onConfirmPurchase,
   isLoading 
 }: PLNPurchaseConfirmationProps) => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -104,18 +104,18 @@ const PLNPurchaseConfirmation = ({
           </div>
 
           {/* Balance Info */}
-          {user && (
+          {user && profile && (
             <div className="bg-green-50 p-3 rounded-lg border border-green-200">
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-600">Saldo Anda:</span>
-                <span className="font-medium">{formatPrice(user.balance || 0)}</span>
+                <span className="font-medium">{formatPrice(profile.balance || 0)}</span>
               </div>
               <div className="flex justify-between items-center text-sm mt-1">
                 <span className="text-gray-600">Sisa Saldo:</span>
                 <span className={`font-medium ${
-                  (user.balance || 0) - totalAmount >= 0 ? 'text-green-600' : 'text-red-600'
+                  (profile.balance || 0) - totalAmount >= 0 ? 'text-green-600' : 'text-red-600'
                 }`}>
-                  {formatPrice((user.balance || 0) - totalAmount)}
+                  {formatPrice((profile.balance || 0) - totalAmount)}
                 </span>
               </div>
             </div>
@@ -134,7 +134,7 @@ const PLNPurchaseConfirmation = ({
             </Button>
             <Button
               onClick={onConfirmPurchase}
-              disabled={isLoading || !user || (user.balance || 0) < totalAmount}
+              disabled={isLoading || !user || !profile || (profile.balance || 0) < totalAmount}
               className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white"
             >
               {isLoading ? 'Memproses...' : 'Konfirmasi Beli'}
@@ -147,7 +147,7 @@ const PLNPurchaseConfirmation = ({
             </p>
           )}
 
-          {user && (user.balance || 0) < totalAmount && (
+          {user && profile && (profile.balance || 0) < totalAmount && (
             <p className="text-sm text-red-600 text-center">
               Saldo tidak mencukupi. Silakan top up terlebih dahulu.
             </p>
