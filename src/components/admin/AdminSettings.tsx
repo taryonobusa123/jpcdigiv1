@@ -1,30 +1,44 @@
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useDigiflazzConfig, useSaveDigiflazzConfig } from "@/hooks/useDigiflazzConfig";
 
 const AdminSettings = () => {
-  // For now, just use local state as mock.
+  const { data: config, isLoading, error } = useDigiflazzConfig();
+  const saveConfig = useSaveDigiflazzConfig();
   const [username, setUsername] = useState("");
   const [apiKey, setApiKey] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [mode, setMode] = useState("live");
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
+  useEffect(() => {
+    if (config) {
+      setUsername(config.username || "");
+      setApiKey(""); // demi keamanan, tidak tampilkan key walau ada data, user harus input ulang
+      setMode(config.mode || "live");
+    }
+  }, [config]);
 
-    // Simulasi save, nanti ganti panggil Supabase function/mutation.
-    setTimeout(() => {
-      setSaving(false);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!username || !apiKey) {
       toast({
-        title: "Berhasil",
-        description: "Pengaturan Digiflazz API telah disimpan.",
+        title: "Error",
+        description: "Username dan API Key harus diisi.",
+        variant: "destructive",
       });
-    }, 1200);
+      return;
+    }
+    saveConfig.mutate({
+      username,
+      apiKey,
+      mode,
+      id: config?.id,
+    });
   };
 
   return (
@@ -33,35 +47,56 @@ const AdminSettings = () => {
         <CardTitle>Pengaturan API Digiflazz</CardTitle>
       </CardHeader>
       <CardContent>
-        <form className="space-y-4 max-w-lg" onSubmit={handleSubmit}>
-          <div>
-            <Label htmlFor="digiflazz-username">Username Digiflazz</Label>
-            <Input
-              type="text"
-              id="digiflazz-username"
-              placeholder="Username Digiflazz"
-              autoComplete="off"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="digiflazz-apikey">API Key Digiflazz</Label>
-            <Input
-              type="password"
-              id="digiflazz-apikey"
-              placeholder="API Key Digiflazz"
-              autoComplete="off"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              required
-            />
-          </div>
-          <Button type="submit" disabled={saving}>
-            {saving ? "Menyimpan..." : "Simpan"}
-          </Button>
-        </form>
+        {isLoading ? (
+          <div className="py-8 text-center text-muted-foreground">Memuat konfigurasi...</div>
+        ) : (
+          <form className="space-y-4 max-w-lg" onSubmit={handleSubmit}>
+            <div>
+              <Label htmlFor="digiflazz-username">Username Digiflazz</Label>
+              <Input
+                type="text"
+                id="digiflazz-username"
+                placeholder="Username Digiflazz"
+                autoComplete="off"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                disabled={saveConfig.isPending}
+              />
+            </div>
+            <div>
+              <Label htmlFor="digiflazz-apikey">API Key Digiflazz</Label>
+              <Input
+                type="password"
+                id="digiflazz-apikey"
+                placeholder="API Key Digiflazz"
+                autoComplete="off"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                required
+                disabled={saveConfig.isPending}
+              />
+            </div>
+            {/* Opsi mode future-proof kalau ingin tambah sandbox/live */}
+            <div>
+              <Label htmlFor="digiflazz-mode">Mode</Label>
+              <Input
+                type="text"
+                id="digiflazz-mode"
+                value={mode}
+                onChange={(e) => setMode(e.target.value)}
+                disabled
+                className="bg-muted"
+              />
+            </div>
+            <Button type="submit" disabled={saveConfig.isPending || !username || !apiKey}>
+              {saveConfig.isPending ? "Menyimpan..." : "Simpan"}
+            </Button>
+          </form>
+        )}
+        {error && (
+          <div className="text-xs text-destructive mt-2">{error.message}</div>
+        )}
         <p className="text-xs text-muted-foreground mt-4">
           API key tidak akan ditampilkan setelah tersimpan demi alasan keamanan.
         </p>
