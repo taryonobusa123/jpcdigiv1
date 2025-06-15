@@ -33,6 +33,7 @@ import Delivery from "./pages/Delivery";
 import Wallet from "./pages/Wallet";
 import Gaming from "./pages/Gaming";
 import BPJSKesehatan from "./pages/BPJSKesehatan";
+import Insurance from "./pages/Insurance";
 
 const queryClient = new QueryClient();
 
@@ -73,6 +74,7 @@ const App = () => (
             <Route path="/wallet" element={<TopupSaldo />} />
             <Route path="/gaming" element={<Gaming />} />
             <Route path="/insurance/bpjs-kesehatan" element={<BPJSKesehatan />} />
+            <Route path="/insurance" element={<Insurance />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
