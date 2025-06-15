@@ -1,46 +1,50 @@
 
 import React from "react";
-import { useTransactions } from "@/hooks/useTransactions";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { CheckCircle, Clock, XCircle, History as HistoryIcon } from "lucide-react";
 import BottomNavigation from "../components/BottomNavigation";
+import { CheckCircle, Clock, XCircle } from "lucide-react";
 
 const StatusBadge = ({ status }: { status: string }) => {
-  const colors = {
-    success: "bg-green-100 text-green-600",
-    pending: "bg-yellow-100 text-yellow-600",
-    failed: "bg-red-100 text-red-600",
+  const variants: { [key: string]: { color: string; icon: React.ReactNode; text: string } } = {
+    success: { color: "bg-green-100 text-green-700", icon: <CheckCircle className="w-4 h-4 mr-1" />, text: "Berhasil" },
+    pending: { color: "bg-yellow-100 text-yellow-700", icon: <Clock className="w-4 h-4 mr-1" />, text: "Pending" },
+    failed: { color: "bg-red-100 text-red-700", icon: <XCircle className="w-4 h-4 mr-1" />, text: "Gagal" },
   };
-  const icons = {
-    success: <CheckCircle className="w-4 h-4 inline mr-1" />,
-    pending: <Clock className="w-4 h-4 inline mr-1" />,
-    failed: <XCircle className="w-4 h-4 inline mr-1" />,
-  };
-  const color = colors[status as keyof typeof colors] || "bg-gray-100 text-gray-500";
-  const icon = icons[status as keyof typeof icons] || <Clock className="w-4 h-4 inline mr-1" />;
-  let text = "Tidak Diketahui";
-  if (status === "success") text = "Berhasil";
-  else if (status === "pending") text = "Pending";
-  else if (status === "failed") text = "Gagal";
-  else if (status) text = status;
+  const variant = variants[status] || { color: "bg-gray-100 text-gray-600", icon: <Clock className="w-4 h-4 mr-1" />, text: status };
   return (
-    <span className={`px-2 py-1 rounded-full text-xs font-semibold flex items-center ${color}`}>
-      {icon}
-      {text}
+    <span className={`flex items-center px-2 py-1 rounded-full text-xs font-medium ${variant.color}`}>
+      {variant.icon}
+      {variant.text}
     </span>
   );
 };
 
+const fetchTransactions = async (userId: string) => {
+  if (!userId) throw new Error("User belum login");
+  const { data, error } = await supabase
+    .from("transactions")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return data ?? [];
+};
+
 const History = () => {
   const { user } = useAuth();
-  const { data: transactions, isLoading, error, refetch } = useTransactions();
 
-  // DEBUG LOG, data di console browser
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ["history-simple", user?.id],
+    queryFn: () => fetchTransactions(user?.id as string),
+    enabled: !!user,
+  });
+
   React.useEffect(() => {
-    console.log("USER:", user);
-    console.log("TRANSACTIONS:", transactions);
-    console.log("ERROR:", error);
-  }, [user, transactions, error]);
+    console.log("Transaksi DB (transactions):", data);
+  }, [data]);
 
   if (!user) {
     return (
@@ -57,8 +61,7 @@ const History = () => {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <div className="bg-white sticky top-0 z-40 border-b border-gray-200 p-4 flex items-center gap-2">
-        <HistoryIcon className="w-5 h-5 text-blue-600" />
-        <h1 className="text-xl font-bold">Riwayat Transaksi</h1>
+        <span className="font-semibold text-blue-700 text-lg">Riwayat Transaksi</span>
         <button
           onClick={() => refetch()}
           className="ml-auto bg-blue-50 text-blue-700 border border-blue-100 rounded px-2 py-1 text-xs hover:bg-blue-100 transition"
@@ -83,35 +86,31 @@ const History = () => {
             >
               Coba lagi
             </button>
-            <span className="mt-2 text-xs text-gray-400 break-all">{error.message}</span>
+            <span className="mt-2 text-xs text-gray-400 break-all">{String(error?.message || "")}</span>
           </div>
-        ) : !transactions || transactions.length === 0 ? (
+        ) : !data || data.length === 0 ? (
           <div className="flex flex-col items-center text-center py-20">
             <Clock className="w-10 h-10 text-gray-300 mb-2" />
             <p className="text-gray-600 font-medium">Belum ada transaksi.</p>
           </div>
         ) : (
           <div className="space-y-3">
-            {transactions.map((tx: any) => (
-              <div
-                key={tx.id}
-                className="bg-white rounded-xl shadow-sm px-4 py-2 border border-gray-100 flex flex-col gap-1"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-sm text-gray-800">{tx.type || "-"}</span>
-                  <span className="font-bold text-sm text-gray-800">{tx.amount}</span>
+            {data.map((tx: any) => (
+              <div key={tx.id} className="bg-white rounded-xl shadow-sm px-4 py-2 border border-gray-100 flex flex-col gap-1">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-semibold text-sm text-gray-800">{tx.product_name ?? "-"}</span>
+                  <span className="font-bold text-sm text-gray-800">Rp{Number(tx.price).toLocaleString("id-ID")}</span>
                 </div>
-                <div className="text-xs text-gray-500">
-                  {tx.description || "-"}
-                </div>
-                {tx.ref_id && (
-                  <div className="text-xs text-gray-400">ID: {tx.ref_id}</div>
-                )}
-                <div className="flex items-center justify-between pt-2">
+                <div className="text-xs text-gray-500">Customer ID: {tx.customer_id ?? "-"}</div>
+                <div className="flex items-center justify-between pt-1">
                   <span className="text-xs text-gray-400">
-                    {tx.date} {tx.time}
+                    {tx.created_at ? new Date(tx.created_at).toLocaleDateString("id-ID") : "-"}{" "}
+                    {tx.created_at ? new Date(tx.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : ""}
                   </span>
                   <StatusBadge status={tx.status} />
+                </div>
+                <div className="flex items-center text-xs text-gray-400 gap-2">
+                  <span>ID: {tx.ref_id ?? "-"}</span>
                 </div>
               </div>
             ))}
