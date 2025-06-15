@@ -37,9 +37,21 @@ export function usePlnMeterCheck() {
     },
     onError: (error: Error) => {
       console.error('PLN meter check error:', error);
+      
+      // Provide specific error messages based on the error
+      let errorMessage = error.message;
+      
+      if (errorMessage.includes('IP server belum terdaftar')) {
+        errorMessage = 'IP server belum terdaftar di Digiflazz. Silakan hubungi administrator.';
+      } else if (errorMessage.includes('tidak kami kenali')) {
+        errorMessage = 'Server belum terdaftar di sistem provider. Silakan hubungi administrator.';
+      } else if (errorMessage.includes('Gagal menghubungi server')) {
+        errorMessage = 'Gagal menghubungi server. Silakan coba lagi.';
+      }
+      
       toast({
         title: "Error",
-        description: error.message || "Gagal mengecek nomor meter",
+        description: errorMessage,
         variant: "destructive",
       });
     },

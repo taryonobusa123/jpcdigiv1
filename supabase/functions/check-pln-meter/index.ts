@@ -19,7 +19,7 @@ serve(async (req) => {
         success: false,
         message: 'Nomor meter harus diisi'
       }), {
-        status: 400,
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -36,7 +36,7 @@ serve(async (req) => {
         success: false,
         message: inquiryResult.message || 'Gagal mengecek nomor meter'
       }), {
-        status: 200, // Changed to 200 to avoid throwing error in frontend
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -56,7 +56,7 @@ serve(async (req) => {
       success: false,
       message: 'Terjadi kesalahan sistem'
     }), {
-      status: 200, // Changed to 200 to avoid throwing error in frontend
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
@@ -70,7 +70,7 @@ async function callDigiflazzInquiry(meterNumber: string) {
     console.error('Digiflazz credentials not configured');
     return {
       success: false,
-      message: 'Konfigurasi API tidak lengkap'
+      message: 'Konfigurasi API tidak lengkap. Silakan hubungi administrator.'
     };
   }
 
@@ -122,34 +122,53 @@ async function callDigiflazzInquiry(meterNumber: string) {
       console.error('Failed to parse JSON response:', parseError);
       return {
         success: false,
-        message: 'Invalid response format from server'
+        message: 'Format respons server tidak valid'
       };
     }
 
     console.log('Digiflazz parsed response:', result);
     
-    // Check if inquiry was successful
-    if (result.data && (result.data.status === 'Sukses' || result.data.rc === '00')) {
-      return {
-        success: true,
-        data: {
-          customer_name: result.data.customer_name || result.data.desc || 'Nama tidak tersedia',
-          customer_no: meterNumber,
-          tarif: result.data.tarif || result.data.desc || 'R1/900VA',
-          power: result.data.power || '900VA'
-        }
-      };
-    } else {
-      return {
-        success: false,
-        message: result.data?.message || result.message || 'Nomor meter tidak ditemukan atau tidak valid'
-      };
+    // Check specific error messages
+    if (result.data) {
+      // Check for IP whitelist error
+      if (result.data.message && result.data.message.includes('IP Anda tidak kami kenali')) {
+        return {
+          success: false,
+          message: 'IP server belum terdaftar di Digiflazz. Silakan hubungi administrator untuk menambahkan IP ke whitelist.'
+        };
+      }
+      
+      // Check for other errors
+      if (result.data.status === 'Gagal' || result.data.rc !== '00') {
+        return {
+          success: false,
+          message: result.data.message || 'Nomor meter tidak ditemukan atau tidak valid'
+        };
+      }
+      
+      // Check if inquiry was successful
+      if (result.data.status === 'Sukses' || result.data.rc === '00') {
+        return {
+          success: true,
+          data: {
+            customer_name: result.data.customer_name || result.data.desc || 'Nama tidak tersedia',
+            customer_no: meterNumber,
+            tarif: result.data.tarif || result.data.desc || 'R1/900VA',
+            power: result.data.power || '900VA'
+          }
+        };
+      }
     }
+    
+    return {
+      success: false,
+      message: result.message || 'Nomor meter tidak ditemukan atau tidak valid'
+    };
   } catch (error) {
     console.error('Digiflazz inquiry API error:', error);
     return {
       success: false,
-      message: 'Gagal menghubungi server provider'
+      message: 'Gagal menghubungi server provider. Silakan coba lagi.'
     };
   }
 }
