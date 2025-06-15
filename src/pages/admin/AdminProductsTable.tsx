@@ -28,7 +28,8 @@ export default function AdminProductsTable({ products, isLoading, formatCurrency
               product.category === "electricity" ||
               product.category === "emoney" ||
               product.category === "gaming" ||
-              product.category === "voucher"
+              product.category === "voucher" ||
+              product.category === "water" // Tambah kategori water (PDAM)
             ).slice(0, 50).map((product) => (
               <TableRow key={product.id}>
                 <TableCell className="font-mono text-xs">{product.sku}</TableCell>
@@ -37,6 +38,10 @@ export default function AdminProductsTable({ products, isLoading, formatCurrency
                   <Badge variant="outline">
                     {product.category === "pascabayar"
                       ? "Pascabayar"
+                      : product.category === "pulsa"
+                      ? "Prabayar"
+                      : product.category === "water"
+                      ? "PDAM"
                       : product.category.charAt(0).toUpperCase() +
                         product.category.slice(1)}
                   </Badge>
@@ -57,3 +62,4 @@ export default function AdminProductsTable({ products, isLoading, formatCurrency
     </div>
   )
 }
+
