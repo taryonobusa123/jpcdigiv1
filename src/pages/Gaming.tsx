@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useProducts } from '@/hooks/useProducts';
 import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,13 +9,36 @@ import BottomNavigation from '@/components/BottomNavigation';
 
 const Gaming = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedGame, setSelectedGame] = useState('all');
   const { data: products, isLoading, error } = useProducts('gaming');
 
+  // Ambil list type unik dari produk gaming sebagai kategori game
+  const gameTypes = useMemo(() => {
+    if (!products) return [];
+    const typesUnique = Array.from(
+      new Set(
+        products
+          .filter((p) => !!p.type)
+          .map((p) => p.type.trim())
+      )
+    );
+    return typesUnique;
+  }, [products]);
+
+  // Filter by kategori game (type)
+  const filteredByType = useMemo(() => {
+    if (!products) return [];
+    if (selectedGame === 'all') return products;
+    return products.filter((p) => p.type === selectedGame);
+  }, [products, selectedGame]);
+
   // Filter by search query (name, brand)
-  const filteredProducts = products?.filter(product =>
-    product.product_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.brand?.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  const filteredProducts =
+    filteredByType?.filter(
+      (product) =>
+        product.product_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.brand?.toLowerCase().includes(searchQuery.toLowerCase())
+    ) || [];
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat('id-ID', {
@@ -34,15 +57,30 @@ const Gaming = () => {
           </a>
           <h1 className="text-xl font-bold">Voucher Gaming</h1>
         </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <Input
-            type="text"
-            placeholder="Cari produk gaming..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 rounded-lg bg-white text-gray-800 placeholder-gray-500 focus:outline-none"
-          />
+        {/* Dropdown kategori game */}
+        <div className="flex flex-col md:flex-row md:items-center md:space-x-3 space-y-2 md:space-y-0 mb-2">
+          <div>
+            <select
+              className="w-full md:w-auto text-gray-800 rounded-lg py-2 px-3 focus:outline-none"
+              value={selectedGame}
+              onChange={e => setSelectedGame(e.target.value)}
+            >
+              <option value="all">Semua Game</option>
+              {gameTypes.map((type) => (
+                <option key={type} value={type}>{type}</option>
+              ))}
+            </select>
+          </div>
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Cari produk gaming..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 rounded-lg bg-white text-gray-800 placeholder-gray-500 focus:outline-none"
+            />
+          </div>
         </div>
       </div>
 
@@ -88,4 +126,3 @@ const Gaming = () => {
 };
 
 export default Gaming;
-
