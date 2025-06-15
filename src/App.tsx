@@ -24,6 +24,7 @@ import WhatsAppVerificationPage from "@/pages/WhatsAppVerification";
 import TopUp from "@/pages/TopUp";
 import TopupSaldo from "@/pages/TopupSaldo";
 import TopupHistory from "@/pages/TopupHistory";
+import Transfer from "@/pages/Transfer";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,7 @@ const App = () => (
             <Route path="/topup" element={<TopUp />} />
             <Route path="/topup-saldo" element={<TopupSaldo />} />
             <Route path="/topup-history" element={<TopupHistory />} />
+            <Route path="/transfer" element={<Transfer />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>

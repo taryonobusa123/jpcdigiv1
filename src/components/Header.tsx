@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Bell, User, Menu } from 'lucide-react';
+import { Bell, User, Plus, History, ArrowRightLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -16,11 +16,22 @@ const Header = () => {
           </div>
           <div>
             <h1 className="text-lg font-bold">PPOB Indonesia</h1>
-            <p className="text-blue-100 text-xs">Bayar Semua Tagihan</p>
           </div>
         </div>
         
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2">
+          <Link to="/topup-saldo" className="p-2 hover:bg-blue-700 rounded-lg transition-colors">
+            <Plus className="w-5 h-5" />
+          </Link>
+          
+          <Link to="/history" className="p-2 hover:bg-blue-700 rounded-lg transition-colors">
+            <History className="w-5 h-5" />
+          </Link>
+          
+          <Link to="/transfer" className="p-2 hover:bg-blue-700 rounded-lg transition-colors">
+            <ArrowRightLeft className="w-5 h-5" />
+          </Link>
+          
           <button className="relative p-2 hover:bg-blue-700 rounded-lg transition-colors">
             <Bell className="w-5 h-5" />
             <span className="absolute -top-1 -right-1 bg-red-500 text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">3</span>
