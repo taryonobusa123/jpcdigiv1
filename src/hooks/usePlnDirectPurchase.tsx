@@ -39,9 +39,9 @@ export function usePlnDirectPurchase() {
         throw new Error('Saldo tidak mencukupi');
       }
 
-      // Create transaction record in pln_transactions table
-      const { data: plnTransaction, error: transactionError } = await supabase
-        .from('pln_transactions')
+      // Create transaction record in transactions table
+      const { data: transaction, error: transactionError } = await supabase
+        .from('transactions')
         .insert({
           user_id: user.id,
           ref_id,
@@ -62,7 +62,7 @@ export function usePlnDirectPurchase() {
       // Process transaction via edge function
       const { data: result, error: processError } = await supabase.functions.invoke('purchase-pln-direct', {
         body: { 
-          transaction_id: plnTransaction.id,
+          transaction_id: transaction.id,
           ref_id,
           customer_id: purchaseData.meter_number,
           sku: purchaseData.sku,
@@ -77,10 +77,10 @@ export function usePlnDirectPurchase() {
 
       console.log('PLN purchase result:', result);
 
-      return { transaction: plnTransaction, result };
+      return { transaction, result };
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['pln-transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
       refreshProfile();
       
       // Navigate to transaction detail page

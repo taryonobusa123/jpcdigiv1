@@ -34,7 +34,7 @@ serve(async (req) => {
 
     // Get transaction details first
     const { data: transaction, error: fetchError } = await supabase
-      .from('pln_transactions')
+      .from('transactions')
       .select('user_id')
       .eq('id', transaction_id)
       .single();
@@ -57,7 +57,7 @@ serve(async (req) => {
 
     // Update transaction status in database
     const { data: updatedTransaction, error: updateError } = await supabase
-      .from('pln_transactions')
+      .from('transactions')
       .update({
         status: transactionResult.success ? 'success' : 'failed',
         message: transactionResult.message,
