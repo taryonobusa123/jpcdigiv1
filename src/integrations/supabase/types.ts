@@ -60,6 +60,30 @@ export type Database = {
           },
         ]
       }
+      digiflazz_config: {
+        Row: {
+          api_key: string
+          created_at: string
+          id: string
+          mode: string
+          username: string
+        }
+        Insert: {
+          api_key: string
+          created_at: string
+          id: string
+          mode: string
+          username: string
+        }
+        Update: {
+          api_key?: string
+          created_at?: string
+          id?: string
+          mode?: string
+          username?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           brand: string
