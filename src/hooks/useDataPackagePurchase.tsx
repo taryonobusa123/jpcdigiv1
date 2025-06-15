@@ -43,14 +43,11 @@ export function useDataPackagePurchase() {
         .insert({
           user_id: user.id,
           ref_id,
-          phone_number: transaction.phone_number,
-          operator: transaction.operator,
+          customer_id: transaction.phone_number,
           product_name: transaction.product_name,
-          description: transaction.description,
-          amount: transaction.price,
-          sku: transaction.sku,
+          price: transaction.price,
           status: 'pending',
-          type: 'data_package',
+          sn: transaction.sku,
         })
         .select()
         .single();

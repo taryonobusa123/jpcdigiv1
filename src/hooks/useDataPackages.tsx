@@ -9,7 +9,7 @@ export function useDataPackages(operator?: string) {
       let query = supabase
         .from('products')
         .select('*')
-        .eq('category', 'Data')
+        .eq('category', 'data')
         .eq('is_active', true)
         .order('buyer_price', { ascending: true });
 
@@ -20,10 +20,12 @@ export function useDataPackages(operator?: string) {
       const { data, error } = await query;
 
       if (error) {
+        console.error('Error fetching data packages:', error);
         throw error;
       }
 
-      return data;
+      console.log('Fetched data packages:', data?.length || 0);
+      return data || [];
     },
   });
 }
@@ -35,15 +37,17 @@ export function useDataOperators() {
       const { data, error } = await supabase
         .from('products')
         .select('brand')
-        .eq('category', 'Data')
+        .eq('category', 'data')
         .eq('is_active', true);
 
       if (error) {
+        console.error('Error fetching data operators:', error);
         throw error;
       }
 
       // Get unique operators
-      const operators = [...new Set(data.map(item => item.brand))];
+      const operators = [...new Set(data?.map(item => item.brand) || [])];
+      console.log('Available data operators:', operators);
       return operators;
     },
   });
