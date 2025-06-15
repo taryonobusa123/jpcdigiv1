@@ -7,11 +7,17 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import BottomNavigation from '@/components/BottomNavigation';
 import { useIsMobile } from '@/hooks/use-mobile';
+// Tambahkan import TransactionModal
+import TransactionModal from '@/components/TransactionModal';
 
 const Gaming = () => {
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('all');
+  // State untuk modal transaksi
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+
   const { data: products, isLoading, error } = useProducts('gaming');
 
   // Ambil semua brand unik dari produk
@@ -113,13 +119,31 @@ const Gaming = () => {
                   </div>
                   <div className="flex items-center justify-between mt-1">
                     <span className="text-blue-600 font-bold text-xs">{formatPrice(product.buyer_price)}</span>
-                    <Button size="sm" className="text-xs px-2 py-1 h-7 rounded-md">Beli</Button>
+                    <Button
+                      size="sm"
+                      className="text-xs px-2 py-1 h-7 rounded-md"
+                      onClick={() => {
+                        setSelectedProduct(product);
+                        setModalOpen(true);
+                      }}
+                    >
+                      Beli
+                    </Button>
                   </div>
                 </div>
               ))}
             </div>
           )}
         </div>
+        {/* Modal transaksi */}
+        <TransactionModal
+          product={selectedProduct}
+          open={modalOpen}
+          onOpenChange={(open) => {
+            setModalOpen(open);
+            if (!open) setSelectedProduct(null);
+          }}
+        />
         <BottomNavigation />
       </div>
     );
@@ -191,17 +215,34 @@ const Gaming = () => {
                 </div>
                 <div className="flex items-center justify-between mt-4">
                   <span className="text-blue-600 font-bold text-base">{formatPrice(product.buyer_price)}</span>
-                  <Button size="sm" className="text-xs">Beli</Button>
+                  <Button
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => {
+                      setSelectedProduct(product);
+                      setModalOpen(true);
+                    }}
+                  >
+                    Beli
+                  </Button>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+      {/* Modal transaksi */}
+      <TransactionModal
+        product={selectedProduct}
+        open={modalOpen}
+        onOpenChange={(open) => {
+          setModalOpen(open);
+          if (!open) setSelectedProduct(null);
+        }}
+      />
       <BottomNavigation />
     </div>
   );
 };
 
 export default Gaming;
-
