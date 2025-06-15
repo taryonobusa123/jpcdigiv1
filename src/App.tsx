@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -25,6 +24,7 @@ import TopUp from "@/pages/TopUp";
 import TopupSaldo from "@/pages/TopupSaldo";
 import TopupHistory from "@/pages/TopupHistory";
 import Transfer from "@/pages/Transfer";
+import DataPackagePurchase from "@/pages/DataPackagePurchase";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +56,7 @@ const App = () => (
             <Route path="/topup-saldo" element={<TopupSaldo />} />
             <Route path="/topup-history" element={<TopupHistory />} />
             <Route path="/transfer" element={<Transfer />} />
+            <Route path="/data-packages" element={<DataPackagePurchase />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>

@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { ArrowLeft, Smartphone, Search, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Smartphone, Search, ChevronRight, Wifi } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import BottomNavigation from '../components/BottomNavigation';
 
@@ -14,6 +13,13 @@ const TopUp = () => {
       color: 'bg-green-500',
       description: 'Beli pulsa semua operator',
       path: '/pulsa'
+    },
+    {
+      name: 'Paket Data All Operator',
+      logo: '📶',
+      color: 'bg-purple-500',
+      description: 'Beli paket data semua operator',
+      path: '/data-packages'
     },
     {
       name: 'Telkomsel',
@@ -60,13 +66,13 @@ const TopUp = () => {
 
       {/* Operators */}
       <div className="p-4 space-y-4">
-        <h2 className="text-lg font-bold text-gray-800">Pilih Provider</h2>
+        <h2 className="text-lg font-bold text-gray-800">Pilih Layanan</h2>
         
         {operators.map((operator, index) => (
           <div key={index} className="bg-white rounded-xl shadow-md p-4">
             <div className="flex items-center space-x-3 mb-3">
               <div className={`p-2 rounded-lg ${operator.color} text-white text-lg`}>
-                <Smartphone className="w-5 h-5" />
+                {operator.name.includes('Data') ? <Wifi className="w-5 h-5" /> : <Smartphone className="w-5 h-5" />}
               </div>
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-gray-800">{operator.name}</h3>
@@ -81,7 +87,9 @@ const TopUp = () => {
                 to={operator.path}
                 className="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:bg-green-50 transition-colors"
               >
-                <span className="font-medium text-gray-800">Beli Pulsa</span>
+                <span className="font-medium text-gray-800">
+                  {operator.name.includes('Data') ? 'Beli Paket Data' : 'Beli Pulsa'}
+                </span>
                 <ChevronRight className="w-5 h-5 text-gray-400" />
               </Link>
             ) : (
