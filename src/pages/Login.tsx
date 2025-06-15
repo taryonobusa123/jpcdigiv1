@@ -53,7 +53,9 @@ const Login = () => {
     try {
       const formattedWhatsapp = formatWhatsAppNumber(whatsappNumber);
       await signUp(email, password, fullName, formattedWhatsapp);
-      navigate('/');
+      
+      // Redirect to WhatsApp verification page
+      navigate(`/verify-whatsapp?number=${encodeURIComponent(formattedWhatsapp)}`);
     } catch (error) {
       console.error('Sign up error:', error);
     }

@@ -84,6 +84,36 @@ export type Database = {
         }
         Relationships: []
       }
+      otp_codes: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          is_used: boolean
+          otp_code: string
+          user_id: string | null
+          whatsapp_number: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          is_used?: boolean
+          otp_code: string
+          user_id?: string | null
+          whatsapp_number: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          is_used?: boolean
+          otp_code?: string
+          user_id?: string | null
+          whatsapp_number?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           brand: string
@@ -146,6 +176,7 @@ export type Database = {
           full_name: string | null
           id: string
           is_active: boolean | null
+          is_whatsapp_verified: boolean | null
           phone: string | null
           updated_at: string | null
           whatsapp_number: string | null
@@ -157,6 +188,7 @@ export type Database = {
           full_name?: string | null
           id: string
           is_active?: boolean | null
+          is_whatsapp_verified?: boolean | null
           phone?: string | null
           updated_at?: string | null
           whatsapp_number?: string | null
@@ -168,6 +200,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_active?: boolean | null
+          is_whatsapp_verified?: boolean | null
           phone?: string | null
           updated_at?: string | null
           whatsapp_number?: string | null
@@ -429,6 +462,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_expired_otp: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       update_user_balance: {
         Args: {
           p_user_id: string

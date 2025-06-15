@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,6 +12,7 @@ import Admin from "@/pages/Admin";
 import TestPurchase from "@/pages/TestPurchase";
 import PLNToken from "@/pages/PLNToken";
 import PulsaPurchase from "@/pages/PulsaPurchase";
+import WhatsAppVerificationPage from "@/pages/WhatsAppVerification";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +26,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/verify-whatsapp" element={<WhatsAppVerificationPage />} />
             <Route path="/products" element={<ProductList />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/test-purchase" element={<TestPurchase />} />
