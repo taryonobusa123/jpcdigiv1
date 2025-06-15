@@ -1,12 +1,11 @@
 
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Wallet } from "lucide-react";
 import { useProducts } from "@/hooks/useProducts";
+import EwalletBrandGrid from "@/components/EwalletBrandGrid";
+import { Badge } from "@/components/ui/badge";
 
-// Helper untuk mengelompokkan produk berdasarkan brand
+// Helper mengelompokkan produk per brand
 const groupByBrand = (products: any[]) => {
   const brandGroups: { [brand: string]: any[] } = {};
   products.forEach((product) => {
@@ -20,9 +19,9 @@ const groupByBrand = (products: any[]) => {
 };
 
 const EWalletTransaksi = () => {
-  // Ambil produk ewallet dari tabel products (kategori emoney atau e-money)
+  // Ambil produk ewallet dari tabel products
   const { data: products, isLoading, isError } = useProducts();
-  // Tampilkan hanya produk dengan kategori "emoney" atau "e-money" (case insensitive)
+  // Filter produk kategori emoney/e-money dan aktif
   const ewalletProducts =
     products?.filter(
       (item) =>
@@ -30,16 +29,8 @@ const EWalletTransaksi = () => {
           item.category?.toLowerCase() === "e-money") &&
         item.is_active
     ) || [];
-
-  // Kelompokkan produk berdasarkan brand (misal: OVO, GoPay, Dana, dll)
+  // Kelompok per brand
   const brandGroups = groupByBrand(ewalletProducts);
-
-  const handleTransaksi = (product: any) => {
-    alert(
-      `Transaksi ewallet akan dibuat untuk produk: ${product.product_name} (${product.buyer_sku_code})`
-    );
-    // Bisa dialihkan ke halaman detail/form transaksi sesuai kebutuhan aplikasi
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -60,51 +51,7 @@ const EWalletTransaksi = () => {
             Tidak ada produk e-wallet tersedia.
           </div>
         ) : (
-          Object.entries(brandGroups).map(([brand, brandProducts]) => (
-            <div key={brand} className="mb-8">
-              <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
-                <Badge variant="outline" className="text-base">
-                  {brand}
-                </Badge>
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {(brandProducts as any[]).map((product) => (
-                  <Card key={product.sku} className="relative">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base font-medium">
-                        {product.product_name}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-2 text-xs">
-                          <Badge variant="outline">{product.brand}</Badge>
-                          <Badge>{product.category}</Badge>
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          {product.description}
-                        </div>
-                        <div className="flex items-center justify-between mt-2">
-                          <div className="font-semibold text-blue-600 text-lg">
-                            Rp
-                            {(Number(product.buyer_price || 0)).toLocaleString(
-                              "id-ID"
-                            )}
-                          </div>
-                          <Button
-                            size="sm"
-                            onClick={() => handleTransaksi(product)}
-                          >
-                            Beli
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          ))
+          <EwalletBrandGrid brandGroups={brandGroups} />
         )}
       </div>
     </div>
