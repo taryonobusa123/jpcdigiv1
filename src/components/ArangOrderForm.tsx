@@ -23,15 +23,17 @@ const ArangOrderForm: React.FC = () => {
   } = useForm<ArangOrder>();
 
   const onSubmit = async (data: ArangOrder) => {
-    const { error } = await supabase.from('orders').insert([
-      {
-        name: data.name,
-        phone: data.phone,
-        address: data.address,
-        quantity: data.quantity,
-        product: 'Arang Kayu', // Hardcoded for arang kayu order
-      },
-    ]);
+    const { error } = await supabase
+      .from<any>('orders')
+      .insert([
+        {
+          name: data.name,
+          phone: data.phone,
+          address: data.address,
+          quantity: data.quantity,
+          product: 'Arang Kayu', // Hardcoded for arang kayu order
+        },
+      ]);
     if (error) {
       toast({
         title: "Gagal memesan",

@@ -14,12 +14,12 @@ type Order = {
 
 const fetchArangOrders = async (): Promise<Order[]> => {
   const { data, error } = await supabase
-    .from('orders')
+    .from<any>('orders')
     .select('id,name,phone,address,quantity,created_at')
     .eq('product', 'Arang Kayu')
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return data as Order[];
+  return data as Order[] || [];
 };
 
 const ArangOrdersList: React.FC = () => {
