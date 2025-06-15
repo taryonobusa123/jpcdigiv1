@@ -17,18 +17,9 @@ import {
   ArrowRightLeft
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
-const user = {
-  name: "Yoga Prasetya",
-  noRek: "9019 5873 0549",
-  photoUrl: "/placeholder.svg", // Gunakan asset/avatar lokal atau dummy
-  saldo: 479700,
-  bunga: 76598,
-  sukuBunga: "3%",
-  notifikasi: 55,
-  limitPinjam: 7500000
-};
-
+// Data menu dan promo tetap sama / static
 const actionMenus = [
   {
     label: "Transfer",
@@ -89,12 +80,32 @@ const flashDeals = [
 ];
 
 export default function Index() {
+  const { profile, loading } = useAuth();
+
+  // Data fallback jika tidak ada profile (misal belum login)
+  const user = {
+    name: profile?.full_name || "Nama User",
+    noRek: profile
+      ? (profile.whatsapp_number
+          ? profile.whatsapp_number.replace(/(\d{4})(?=\d)/g, "$1 ")
+          : profile.id.slice(0, 4) + " " + profile.id.slice(-4))
+      : "xxxx xxxx xxxx",
+    photoUrl: "/placeholder.svg", // Foto user jika ada, fallback png lokal
+    saldo: profile?.balance ?? 0,
+    bunga: 76598, // Dummy, tidak ada di profile
+    sukuBunga: "3%", // Dummy, tidak ada di profile
+    notifikasi: 12, // Dummy, ganti jika ada notifikasi di table/profile
+    limitPinjam: 7500000 // Dummy, hardcode
+  };
+
   return (
     <div className="min-h-screen bg-[#FBFBFB] pb-20">
       {/* Top Bar */}
       <div className="bg-white px-5 pt-5 pb-3 flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <div className="font-bold text-xl tracking-wide">17.33</div>
+          <div className="font-bold text-xl tracking-wide">
+            {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          </div>
           <div className="flex items-center gap-4">
             <span className="relative">
               <Bell className="w-7 h-7 text-gray-500" />
@@ -114,7 +125,8 @@ export default function Index() {
           <div>
             <span className="block font-bold text-lg text-gray-800">{user.name}</span>
             <span className="block text-sm text-gray-500 leading-tight flex items-center gap-1">
-              No. Rekening: <span className="ml-1 tracking-wider">{user.noRek}</span>
+              No. Rekening:
+              <span className="ml-1 tracking-wider">{user.noRek}</span>
               <button className="ml-1 px-1 hover:bg-gray-100 rounded text-xs text-orange-500 font-medium transition">📋</button>
             </span>
           </div>
@@ -134,7 +146,9 @@ export default function Index() {
           </div>
           <div className="py-1 pl-0.5 mb-2 pt-3">
             <span className="text-4xl md:text-5xl font-extrabold tracking-wider text-white drop-shadow">
-              Rp{user.saldo.toLocaleString("id-ID")}
+              {loading ? <span className="animate-pulse">Memuat...</span>
+                : "Rp" + user.saldo.toLocaleString("id-ID")
+              }
             </span>
           </div>
           <div className="flex items-center justify-start gap-8 mt-2">
