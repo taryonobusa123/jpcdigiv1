@@ -15,22 +15,36 @@ export function useSyncProducts() {
         body: {}
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || 'Sync failed');
+      }
+
       return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['product-categories'] });
+      
+      const message = data.error_count > 0 
+        ? `Synced ${data.synced_count} products (${data.error_count} errors)` 
+        : `Successfully synced ${data.synced_count} products from Digiflazz`;
+        
       toast({
-        title: "Success",
-        description: `Synced ${data.synced_count} products from Digiflazz`,
+        title: "Sync Complete",
+        description: message,
+        variant: data.error_count > 0 ? "default" : "default",
       });
     },
     onError: (error) => {
       console.error('Product sync error:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to sync products",
+        title: "Sync Failed",
+        description: error.message || "Failed to sync products from Digiflazz",
         variant: "destructive",
       });
     },
