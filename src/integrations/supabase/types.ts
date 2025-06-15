@@ -171,6 +171,96 @@ export type Database = {
         }
         Relationships: []
       }
+      pulsa_products: {
+        Row: {
+          buyer_sku_code: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          nominal: number
+          operator: string
+          price: number
+          product_name: string
+          updated_at: string
+        }
+        Insert: {
+          buyer_sku_code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          nominal: number
+          operator: string
+          price: number
+          product_name: string
+          updated_at?: string
+        }
+        Update: {
+          buyer_sku_code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          nominal?: number
+          operator?: string
+          price?: number
+          product_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pulsa_transactions: {
+        Row: {
+          created_at: string
+          digiflazz_trx_id: string | null
+          id: string
+          message: string | null
+          nominal: number
+          operator: string
+          phone_number: string
+          price: number
+          product_name: string
+          ref_id: string
+          serial_number: string | null
+          sku: string
+          status: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          digiflazz_trx_id?: string | null
+          id?: string
+          message?: string | null
+          nominal: number
+          operator: string
+          phone_number: string
+          price: number
+          product_name: string
+          ref_id: string
+          serial_number?: string | null
+          sku: string
+          status?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          digiflazz_trx_id?: string | null
+          id?: string
+          message?: string | null
+          nominal?: number
+          operator?: string
+          phone_number?: string
+          price?: number
+          product_name?: string
+          ref_id?: string
+          serial_number?: string | null
+          sku?: string
+          status?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       topup_requests: {
         Row: {
           admin_notes: string | null

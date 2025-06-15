@@ -9,6 +9,13 @@ const TopUp = () => {
 
   const operators = [
     {
+      name: 'Pulsa All Operator',
+      logo: '📱',
+      color: 'bg-green-500',
+      description: 'Beli pulsa semua operator',
+      path: '/pulsa'
+    },
+    {
       name: 'Telkomsel',
       logo: '🔴',
       color: 'bg-red-500',
@@ -61,21 +68,36 @@ const TopUp = () => {
               <div className={`p-2 rounded-lg ${operator.color} text-white text-lg`}>
                 <Smartphone className="w-5 h-5" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-800">{operator.name}</h3>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-800">{operator.name}</h3>
+                {operator.description && (
+                  <p className="text-sm text-gray-600">{operator.description}</p>
+                )}
+              </div>
             </div>
             
-            <div className="space-y-2">
-              {operator.services.map((service, serviceIndex) => (
-                <Link
-                  key={serviceIndex}
-                  to={`/topup/${operator.name.toLowerCase()}/${service.toLowerCase().replace(/\s+/g, '-')}`}
-                  className="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:bg-green-50 transition-colors"
-                >
-                  <span className="font-medium text-gray-800">{service}</span>
-                  <ChevronRight className="w-5 h-5 text-gray-400" />
-                </Link>
-              ))}
-            </div>
+            {operator.path ? (
+              <Link
+                to={operator.path}
+                className="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:bg-green-50 transition-colors"
+              >
+                <span className="font-medium text-gray-800">Beli Pulsa</span>
+                <ChevronRight className="w-5 h-5 text-gray-400" />
+              </Link>
+            ) : (
+              <div className="space-y-2">
+                {operator.services?.map((service, serviceIndex) => (
+                  <Link
+                    key={serviceIndex}
+                    to={`/topup/${operator.name.toLowerCase()}/${service.toLowerCase().replace(/\s+/g, '-')}`}
+                    className="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:bg-green-50 transition-colors"
+                  >
+                    <span className="font-medium text-gray-800">{service}</span>
+                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         ))}
       </div>

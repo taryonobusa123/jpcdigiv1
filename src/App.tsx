@@ -8,6 +8,7 @@ import ProductList from '@/pages/ProductList';
 import Admin from '@/pages/Admin';
 import TestPurchase from '@/pages/TestPurchase';
 import PLNToken from '@/pages/PLNToken';
+import PulsaPurchase from '@/pages/PulsaPurchase';
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ function App() {
             <Route path="/admin" element={<Admin />} />
             <Route path="/test-purchase" element={<TestPurchase />} />
             <Route path="/pln-token" element={<PLNToken />} />
+            <Route path="/pulsa" element={<PulsaPurchase />} />
           </Routes>
           <Toaster />
         </Router>
