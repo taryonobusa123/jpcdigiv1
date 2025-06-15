@@ -20,7 +20,8 @@ const PDAM = () => {
   const [customerNumber, setCustomerNumber] = useState('');
   
   const [customerData, setCustomerData] = useState<any>(null);
-  const { mutate, isLoading } = usePDAMCheck();
+  // Fix: use isPending instead of isLoading
+  const { mutate, isPending } = usePDAMCheck();
 
   const handleCheck = () => {
     setCustomerData(null);
@@ -81,14 +82,14 @@ const PDAM = () => {
               onChange={e => setCustomerNumber(e.target.value)}
               placeholder="Masukkan nomor pelanggan"
               className="mb-3"
-              disabled={isLoading}
+              disabled={isPending}
             />
             <Button
               className="w-full"
               onClick={handleCheck}
-              disabled={!customerNumber || isLoading}
+              disabled={!customerNumber || isPending}
             >
-              {isLoading ? (
+              {isPending ? (
                 <>
                   <svg className="animate-spin h-5 w-5 mr-2 text-white" viewBox="0 0 24 24">
                     <circle
@@ -138,3 +139,4 @@ const PDAM = () => {
 };
 
 export default PDAM;
+
