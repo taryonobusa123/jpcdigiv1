@@ -38,28 +38,34 @@ function pickColor(idx: number) {
 const EwalletBrandGrid: React.FC<EwalletBrandGridProps> = ({ brandGroups }) => {
   const brandNames = Object.keys(brandGroups).sort();
   const [openBrand, setOpenBrand] = useState<string | null>(null);
+  // Track image loading error by brand name
+  const [imgError, setImgError] = useState<Record<string, boolean>>({});
 
   return (
     <div>
       <div className="grid grid-cols-3 md:grid-cols-5 gap-6 my-8">
         {brandNames.map((brand, idx) => {
           const logoSrc = EWALLET_BRAND_LOGOS[brand.toLowerCase()] || null;
+          const showFallback = imgError[brand] || !logoSrc;
           return (
             <button
               key={brand}
               onClick={() => setOpenBrand(brand)}
               className="flex flex-col items-center gap-2 group select-none"
             >
-              <div className={`w-16 h-16 md:w-20 md:h-20 flex items-center justify-center rounded-full shadow-lg font-bold text-3xl md:text-4xl text-white ${pickColor(idx)} group-hover:scale-105 transition-transform bg-white/20`}>
-                {logoSrc ? (
+              <div
+                className={`w-16 h-16 md:w-20 md:h-20 flex items-center justify-center rounded-full shadow-lg font-bold text-3xl md:text-4xl text-white ${pickColor(idx)} group-hover:scale-105 transition-transform bg-white/20`}
+              >
+                {!showFallback ? (
                   <img
                     src={logoSrc}
                     alt={brand}
                     className="w-12 h-12 md:w-16 md:h-16 object-contain"
                     loading="lazy"
+                    onError={() => setImgError((err) => ({ ...err, [brand]: true }))}
                   />
                 ) : (
-                  <span>{brand.slice(0, 2).toUpperCase()}</span>
+                  <span className="uppercase">{brand.slice(0, 3)}</span>
                 )}
               </div>
               <span className="text-sm mt-1 font-medium">{brand}</span>
@@ -104,3 +110,4 @@ const EwalletBrandGrid: React.FC<EwalletBrandGridProps> = ({ brandGroups }) => {
 };
 
 export default EwalletBrandGrid;
+
