@@ -51,7 +51,7 @@ const BalanceCard = () => {
         {user ? (
           <>
             <Link 
-              to="/topup"
+              to="/topup-saldo"
               className="flex-1 bg-white text-green-600 py-3 px-4 rounded-lg font-semibold hover:bg-green-50 transition-colors flex items-center justify-center space-x-2 text-sm"
             >
               <Plus className="w-4 h-4" />

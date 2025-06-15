@@ -21,6 +21,8 @@ import TestPurchase from "@/pages/TestPurchase";
 import PLNToken from "@/pages/PLNToken";
 import PulsaPurchase from "@/pages/PulsaPurchase";
 import WhatsAppVerificationPage from "@/pages/WhatsAppVerification";
+import TopUp from "@/pages/TopUp";
+import TopupSaldo from "@/pages/TopupSaldo";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +50,8 @@ const App = () => (
             <Route path="/test-purchase" element={<TestPurchase />} />
             <Route path="/pln-token" element={<PLNToken />} />
             <Route path="/pulsa" element={<PulsaPurchase />} />
+            <Route path="/topup" element={<TopUp />} />
+            <Route path="/topup-saldo" element={<TopupSaldo />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
