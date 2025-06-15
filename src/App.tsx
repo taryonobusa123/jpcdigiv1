@@ -31,6 +31,7 @@ import EWalletTransaksi from "./pages/EWalletTransaksi";
 import History from "./pages/History"; // Tambah import History
 import PDAM from "./pages/PDAM";
 import Delivery from "./pages/Delivery";
+import Wallet from "./pages/Wallet";
 
 const queryClient = new QueryClient();
 
@@ -69,6 +70,7 @@ const App = () => (
             <Route path="/history" element={<History />} /> {/* Tambahkan route ini */}
             <Route path="/pdam" element={<PDAM />} />
             <Route path="/services" element={<Delivery />} />
+            <Route path="/wallet" element={<TopupSaldo />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
