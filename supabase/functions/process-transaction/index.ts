@@ -25,7 +25,25 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { transaction_id } = await req.json();
+    let body: any;
+    try {
+      body = await req.json();
+    } catch (e) {
+      console.error('Body parsing error:', e);
+      return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Body validation (harus ada transaction_id)
+    const { transaction_id } = body;
+    if (!transaction_id) {
+      return new Response(JSON.stringify({ error: 'Missing transaction_id' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     // Get transaction details
     const { data: transaction, error: selectError } = await supabaseClient
@@ -34,8 +52,12 @@ serve(async (req) => {
       .eq('id', transaction_id)
       .single();
 
-    if (selectError) {
-      throw new Error('Transaction not found');
+    if (selectError || !transaction) {
+      console.error('Transaction not found:', selectError, transaction_id);
+      return new Response(JSON.stringify({ error: 'Transaction not found' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Get user profile for balance check
@@ -45,13 +67,24 @@ serve(async (req) => {
       .eq('id', transaction.user_id)
       .single();
 
-    if (profileError) {
-      throw new Error('User profile not found');
+    if (profileError || !profile) {
+      console.error('User profile not found or error:', profileError, transaction.user_id);
+      return new Response(JSON.stringify({ error: 'User profile not found' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Check if user has sufficient balance
-    if (profile.balance < transaction.price) {
-      throw new Error('Insufficient balance');
+    if (
+      typeof transaction.price !== 'number' ||
+      profile.balance < transaction.price
+    ) {
+      console.error('Insufficient balance. User balance:', profile.balance, 'Required:', transaction.price);
+      return new Response(JSON.stringify({ error: 'Insufficient balance' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Deduct balance from user
@@ -64,17 +97,29 @@ serve(async (req) => {
     });
 
     if (!balanceUpdateResult.data) {
-      throw new Error('Failed to deduct balance');
+      console.error('Failed to deduct balance. RPC error:', balanceUpdateResult.error);
+      return new Response(JSON.stringify({ error: 'Failed to deduct balance' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Call Digiflazz API
-    const digiflazzResponse = await callDigiflazzAPI({
-      customer_id: transaction.customer_id,
-      sku: transaction.sku,
-      ref_id: transaction.ref_id,
-    });
-
-    console.log('Digiflazz API Response:', digiflazzResponse);
+    let digiflazzResponse;
+    try {
+      digiflazzResponse = await callDigiflazzAPI({
+        customer_id: transaction.customer_id,
+        sku: transaction.sku,
+        ref_id: transaction.ref_id,
+      });
+      console.log('Digiflazz API Response:', digiflazzResponse);
+    } catch (digiflazzErr) {
+      console.error('Digiflazz API error:', digiflazzErr);
+      return new Response(JSON.stringify({ error: 'Digiflazz API error', detail: digiflazzErr?.message }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     // Update transaction with Digiflazz response
     const { error: updateError } = await supabaseClient
@@ -91,6 +136,13 @@ serve(async (req) => {
 
     if (updateError) {
       console.error('Error updating transaction:', updateError);
+      return new Response(JSON.stringify({ 
+        error: 'Error updating transaction', 
+        detail: updateError.message 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     return new Response(JSON.stringify({ 
@@ -102,9 +154,10 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Transaction processing error:', error);
+    // catch-all fallback
+    console.error('Transaction processing error (unhandled):', error);
     return new Response(JSON.stringify({ 
-      error: error.message 
+      error: error.message || 'Unknown error in process-transaction'
     }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
