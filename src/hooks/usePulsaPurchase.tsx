@@ -39,36 +39,30 @@ export function usePulsaPurchase() {
         throw new Error('Saldo tidak mencukupi');
       }
 
-      // Create transaction record
-      const { data: pulsaTransaction, error: transactionError } = await supabase
-        .from('pulsa_transactions')
+      // Create transaction record in 'transactions' table
+      const { data: trx, error: trxError } = await supabase
+        .from('transactions')
         .insert({
           user_id: user.id,
           ref_id,
-          phone_number: transaction.phone_number,
-          operator: transaction.operator,
-          product_name: transaction.product_name,
-          nominal: transaction.nominal,
-          price: transaction.price,
+          customer_id: transaction.phone_number,
           sku: transaction.sku,
+          product_name: transaction.product_name,
+          price: transaction.price,
           status: 'pending',
         })
         .select()
         .single();
 
-      if (transactionError) {
-        console.error('Error creating transaction:', transactionError);
+      if (trxError) {
+        console.error('Error creating transaction:', trxError);
         throw new Error('Gagal membuat transaksi');
       }
 
-      // Process transaction via edge function
-      const { data: result, error: processError } = await supabase.functions.invoke('purchase-pulsa', {
-        body: { 
-          transaction_id: pulsaTransaction.id,
-          ref_id,
-          phone_number: transaction.phone_number,
-          sku: transaction.sku,
-          price: transaction.price
+      // Process transaction via edge function (will call Digiflazz)
+      const { data: result, error: processError } = await supabase.functions.invoke('process-transaction', {
+        body: {
+          transaction_id: trx.id
         }
       });
 
@@ -79,15 +73,15 @@ export function usePulsaPurchase() {
 
       console.log('Purchase result:', result);
 
-      return { transaction: pulsaTransaction, result };
+      return { transaction: trx, result };
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['pulsa-transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
       refreshProfile();
-      
+
       // Navigate to transaction detail page
       navigate(`/transaction-detail/${data.transaction.id}`);
-      
+
       if (data.result?.success) {
         toast({
           title: "Berhasil",
@@ -110,3 +104,4 @@ export function usePulsaPurchase() {
     },
   });
 }
+
