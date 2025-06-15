@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -28,6 +27,7 @@ import TopupDetail from "@/pages/TopupDetail";
 import Transfer from "@/pages/Transfer";
 import DataPackagePurchase from "@/pages/DataPackagePurchase";
 import TransactionDetail from "@/pages/TransactionDetail";
+import EWalletTransaksi from "./pages/EWalletTransaksi";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +62,7 @@ const App = () => (
             <Route path="/transfer" element={<Transfer />} />
             <Route path="/data-packages" element={<DataPackagePurchase />} />
             <Route path="/transaction-detail/:id" element={<TransactionDetail />} />
+            <Route path="/ewallet-transaksi" element={<EWalletTransaksi />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
