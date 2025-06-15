@@ -16,7 +16,7 @@ const PulsaPurchase = () => {
   const [detectedOperator, setDetectedOperator] = useState('');
   
   const { data: products, isLoading: isLoadingProducts } = usePulsaProducts();
-  const { purchasePulsa, isLoading: isPurchasing } = usePulsaPurchase();
+  const { mutate: purchasePulsa, isPending: isPurchasing } = usePulsaPurchase();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -53,20 +53,22 @@ const PulsaPurchase = () => {
   const handlePurchase = async () => {
     if (!phoneNumber || !selectedProduct || !user) return;
 
-    try {
-      await purchasePulsa({
-        phone_number: phoneNumber,
-        product_code: selectedProduct.buyer_sku_code,
-        amount: selectedProduct.price
-      });
-      
-      // Reset form after successful purchase
-      setPhoneNumber('');
-      setSelectedProduct(null);
-      setDetectedOperator('');
-    } catch (error) {
-      console.error('Error purchasing pulsa:', error);
-    }
+    purchasePulsa({
+      phone_number: phoneNumber,
+      operator: selectedProduct.operator,
+      product_id: selectedProduct.buyer_sku_code,
+      product_name: selectedProduct.product_name,
+      nominal: selectedProduct.nominal,
+      price: selectedProduct.price,
+      sku: selectedProduct.buyer_sku_code,
+    }, {
+      onSuccess: () => {
+        // Reset form after successful purchase
+        setPhoneNumber('');
+        setSelectedProduct(null);
+        setDetectedOperator('');
+      }
+    });
   };
 
   if (isPageLoading) {
@@ -77,9 +79,9 @@ const PulsaPurchase = () => {
     return <LoadingScreen message="Memproses pembelian pulsa..." />;
   }
 
+  // Filter products based on detected operator using the operator field from pulsa_products table
   const filteredProducts = products?.filter(product => 
-    product.category === 'Pulsa' && 
-    (detectedOperator ? product.brand === detectedOperator : true)
+    detectedOperator ? product.operator === detectedOperator : true
   ) || [];
 
   return (
@@ -142,11 +144,11 @@ const PulsaPurchase = () => {
                       <div>
                         <div className="flex items-center space-x-2 mb-1">
                           <span className="inline-block bg-green-100 text-green-600 text-xs px-2 py-1 rounded-full">
-                            {product.brand}
+                            {product.operator}
                           </span>
                         </div>
                         <h4 className="font-semibold text-gray-800">{product.product_name}</h4>
-                        <p className="text-sm text-gray-500">{product.desc || 'Pulsa reguler'}</p>
+                        <p className="text-sm text-gray-500">Nominal: {product.nominal?.toLocaleString()}</p>
                       </div>
                       <span className="font-bold text-green-600">
                         Rp {product.price?.toLocaleString()}

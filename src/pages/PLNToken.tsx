@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Zap, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -15,8 +14,8 @@ const PLNToken = () => {
   const [selectedAmount, setSelectedAmount] = useState('');
   const [meterData, setMeterData] = useState(null);
   
-  const { checkMeter, isLoading: isCheckingMeter } = usePlnMeterCheck();
-  const { purchaseToken, isLoading: isPurchasing } = usePlnPurchase();
+  const { mutate: checkMeter, isPending: isCheckingMeter } = usePlnMeterCheck();
+  const { mutate: purchaseToken, isPending: isPurchasing } = usePlnPurchase();
 
   const amounts = [
     { display: 'Rp 20.000', value: 20000 },
@@ -38,30 +37,31 @@ const PLNToken = () => {
   const handleCheckMeter = async () => {
     if (!customerNumber.trim()) return;
 
-    try {
-      const data = await checkMeter(customerNumber);
-      setMeterData(data);
-    } catch (error) {
-      console.error('Error checking meter:', error);
-    }
+    checkMeter(customerNumber, {
+      onSuccess: (data) => {
+        if (data.success && data.data) {
+          setMeterData(data.data);
+        }
+      }
+    });
   };
 
   const handlePurchase = async () => {
-    if (!customerNumber || !selectedAmount || !user) return;
+    if (!customerNumber || !selectedAmount || !user || !meterData) return;
 
-    try {
-      await purchaseToken({
-        customer_id: customerNumber,
-        amount: parseInt(selectedAmount)
-      });
-      
-      // Reset form after successful purchase
-      setCustomerNumber('');
-      setSelectedAmount('');
-      setMeterData(null);
-    } catch (error) {
-      console.error('Error purchasing token:', error);
-    }
+    purchaseToken({
+      customer_id: customerNumber,
+      amount: parseInt(selectedAmount),
+      admin_fee: 2500,
+      customer_name: meterData.customer_name
+    }, {
+      onSuccess: () => {
+        // Reset form after successful purchase
+        setCustomerNumber('');
+        setSelectedAmount('');
+        setMeterData(null);
+      }
+    });
   };
 
   if (isPageLoading) {

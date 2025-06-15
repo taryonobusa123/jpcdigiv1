@@ -4,7 +4,6 @@ import { useAuth } from '@/hooks/useAuth';
 import Header from '@/components/Header';
 import UserBalanceCard from '@/components/UserBalanceCard';
 import QuickActions from '@/components/QuickActions';
-import ServiceCategory from '@/components/ServiceCategory';
 import PromoSection from '@/components/PromoSection';
 import BottomNavigation from '@/components/BottomNavigation';
 import LoadingScreen from '@/components/LoadingScreen';
@@ -31,7 +30,6 @@ const Index = () => {
       <Header />
       <UserBalanceCard />
       <QuickActions />
-      <ServiceCategory />
       <PromoSection />
       <BottomNavigation />
     </div>
