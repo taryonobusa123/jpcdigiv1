@@ -21,6 +21,11 @@ export function useDataPackagePurchase() {
     }) => {
       if (!user) throw new Error('User tidak terautentikasi');
 
+      // VALIDASI DATA
+      if (!transaction.phone_number || !transaction.product_name || !transaction.sku) {
+        throw new Error('Pastikan nomor, produk dan SKU terisi');
+      }
+
       console.log('Processing data package purchase:', transaction);
 
       // Generate unique ref_id
@@ -43,7 +48,7 @@ export function useDataPackagePurchase() {
         .insert({
           user_id: user.id,
           ref_id,
-          customer_id: transaction.phone_number,
+          customer_id: transaction.phone_number, // Field ini WAJIB ADA
           product_name: transaction.product_name,
           price: transaction.price,
           status: 'pending',
@@ -57,36 +62,61 @@ export function useDataPackagePurchase() {
         throw new Error('Gagal membuat transaksi');
       }
 
+      // Pastikan dataTransaction dan field penting tidak null
+      if (!dataTransaction?.id || !dataTransaction.customer_id) {
+        throw new Error('Gagal mendapatkan data transaksi');
+      }
+
+      // Log: Payload untuk proses transaksi Edge Function
+      console.log('Payload ke Edge Function:', {
+        transaction_id: dataTransaction.id,
+        ref_id: ref_id,
+        customer_id: transaction.phone_number,
+        sku: transaction.sku,
+        price: transaction.price,
+      });
+
       // Process transaction via edge function
-      const { data: result, error: processError } = await supabase.functions.invoke('process-transaction', {
+      const { data: result, error: processError, status, } = await supabase.functions.invoke('process-transaction', {
         body: { 
           transaction_id: dataTransaction.id,
           ref_id,
-          customer_id: transaction.phone_number,  // Samakan dengan yang di transaction table dan backend
+          customer_id: transaction.phone_number,
           sku: transaction.sku,
           price: transaction.price
         }
       });
 
-      // --- Tambahan: Ekstrak pesan error yang lebih informatif jika ada error ---
+      // Error handling detail
       if (processError) {
+        // Jika ada detail error dari backend, tampilkan
         let friendlyError = 'Gagal memproses transaksi';
-        try {
-          // Supabase edge functions' error (processError.message is usually from function body)
-          if (processError instanceof Error) {
-            // Beberapa error di-wrap berdasarkan spec Supabase-js
+        if (typeof processError === "object") {
+          if (processError.message) {
             friendlyError = processError.message;
-          } else if (typeof processError === 'object') {
-            // Fungsi edge return {error, detail}
-            if (processError.error || processError.detail) {
-              friendlyError = (processError.error || '') + ': ' + (processError.detail || '');
-            }
+          } else if (processError.error || processError.detail) {
+            friendlyError = `${processError.error || ''}: ${processError.detail || ''}`;
           }
-        } catch (innerCatch) {
-          // fall back silently
         }
-        console.error('Transaction processing error:', processError);
+        // Coba ambil dari data error juga
+        if (result?.error) {
+          friendlyError += `: ${result.error}`;
+        }
+        if (result?.detail) {
+          friendlyError += ` (${result.detail})`;
+        }
+
+        console.error('Transaction processing error:', processError, 'Result:', result);
         throw new Error(friendlyError);
+      }
+
+      // Tangkap error dari Edge Function non-2xx status dengan isi message supaya user tahu alasan error
+      if (result && result.error) {
+        let errMsg = result.error;
+        if (result?.detail) {
+          errMsg += `: ${result.detail}`;
+        }
+        throw new Error(errMsg);
       }
 
       console.log('Purchase result:', result);
@@ -97,7 +127,7 @@ export function useDataPackagePurchase() {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       refreshProfile();
       
-      if (data.result?.success) {
+      if (data?.result?.success) {
         toast({
           title: "Berhasil",
           description: "Pembelian paket data berhasil",
@@ -109,11 +139,12 @@ export function useDataPackagePurchase() {
         });
       }
     },
-    onError: (error: Error) => {
+    onError: (error: Error & { message?: string; }) => {
+      // Perbaiki agar pesan error yang detail selalu muncul
       console.error('Data package purchase error:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || String(error),
         variant: "destructive",
       });
     },
