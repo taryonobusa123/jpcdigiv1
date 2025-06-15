@@ -62,7 +62,7 @@ export function useDataPackagePurchase() {
         body: { 
           transaction_id: dataTransaction.id,
           ref_id,
-          phone_number: transaction.phone_number,
+          customer_id: transaction.phone_number,  // Samakan dengan yang di transaction table dan backend
           sku: transaction.sku,
           price: transaction.price
         }
