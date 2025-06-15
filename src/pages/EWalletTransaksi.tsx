@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Wallet } from "lucide-react";
+import { Wallet, History } from "lucide-react";
 import { useProducts } from "@/hooks/useProducts";
 import EwalletBrandGrid from "@/components/EwalletBrandGrid";
 import { Badge } from "@/components/ui/badge";
@@ -28,56 +28,91 @@ const EWalletTransaksi = () => {
     ) || [];
   const brandGroups = groupByBrand(ewalletProducts);
 
+  // Dummy saldo, replace dengan data asli bila ada
+  const saldo = 215000;
+  const noRek = "8501 1423 2268 0010";
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-white py-10 px-4">
-      <div className="max-w-3xl mx-auto">
-        {/* Header Section */}
-        <div className="flex flex-col items-center gap-2 mb-6 animate-fade-in">
-          <div className="flex items-center gap-3">
-            <span className="p-3 rounded-full shadow-lg bg-gradient-to-br from-purple-600 to-indigo-500">
-              <Wallet className="w-8 h-8 text-white" />
-            </span>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight">
-              Transaksi E-Wallet
-            </h1>
+    <div className="min-h-screen bg-[#fef6ee] pb-24 md:pb-8">
+      <div className="max-w-md mx-auto px-2 md:px-0">
+        {/* Header Profile dan Saldo */}
+        <div className="pt-6 pb-0 flex flex-col gap-4">
+          {/* Mini profile */}
+          <div className="flex items-center gap-3 px-1">
+            <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center font-extrabold text-orange-600 border-2 border-orange-200 text-lg select-none">
+              <Wallet className="w-7 h-7" />
+            </div>
+            <div className="flex flex-col flex-1">
+              <span className="font-bold text-base text-gray-800 leading-tight">Saldo E-Wallet</span>
+              <span className="text-xs text-gray-500">No. Rekening: <span className="tracking-wider">{noRek}</span></span>
+            </div>
+            {/* Riwayat btn */}
+            <button
+              className="flex items-center gap-1 bg-white border border-orange-200 shadow text-[13px] px-3 py-1 font-semibold text-orange-600 rounded-full hover:bg-orange-100 transition"
+              style={{ boxShadow: "0 2px 12px 0 #ffe6ce44" }}
+            >
+              <History className="w-4 h-4 mr-1 -ml-1" /> Riwayat
+            </button>
           </div>
-          <span className="text-sm text-slate-600 mt-2 text-center max-w-xl">
-            Lakukan pembelian & top-up saldo e-wallet favorit Anda dengan mudah, aman, dan cepat.<br />
-            Pilih brand e-wallet, lalu pilih nominal dan nomor tujuan.
-          </span>
-          <span className="text-xs bg-blue-100 border border-blue-300 px-2 py-0.5 rounded text-blue-700 mt-1">
-            Otomatis 24 jam & dukungan saldo digital Indonesia
-          </span>
+
+          {/* Card Saldo */}
+          <div className="bg-gradient-to-br from-orange-500 to-orange-400 rounded-2xl shadow-md p-6 text-white flex flex-col gap-1 relative overflow-hidden animate-fade-in">
+            <span className="text-sm font-medium flex items-center gap-1">
+              Tabungan
+              {/* Eye icon bisa ditambah jika ingin fitur show/hide */}
+            </span>
+            <div className="text-3xl md:text-4xl font-extrabold tracking-tight pt-1 pb-2 flex gap-2 items-end">
+              <span>Rp{saldo.toLocaleString("id-ID")}</span>
+            </div>
+            <div className="flex gap-7 text-xs mt-1 text-orange-100/90">
+              <div>
+                <span className="block">Pendapatan Bunga</span>
+                <span className="block font-bold text-white">Rp 0</span>
+              </div>
+              <div>
+                <span className="block">Suku Bunga</span>
+                <span className="block font-bold text-white">2.3% p.a.</span>
+              </div>
+            </div>
+            <span className="absolute right-6 top-3 opacity-10 text-9xl select-none pointer-events-none font-black">S</span>
+          </div>
         </div>
 
-        {/* Info Box */}
-        <div className="rounded-xl bg-white/70 shadow-md border border-gray-100 p-4 mb-8 flex flex-col md:flex-row md:items-center gap-3">
-          <div className="flex-1">
-            <span className="font-semibold text-slate-700">Info:</span> 
-            <span className="ml-1 text-slate-600 text-sm">
-              Semua transaksi diproses menggunakan platform resmi Digiflazz. Endpoint transaksi yang digunakan oleh server kami: 
-              <Badge className="ml-2 px-2 bg-blue-200 text-blue-900" variant="secondary">
-                https://api.digiflazz.com/v1/transaction
-              </Badge>
-            </span>
-          </div>
+        {/* Info: Endpoint */}
+        <div className="flex justify-between bg-white rounded-xl mt-3 py-1.5 px-4 border border-orange-100 shadow-sm items-center mb-2">
+          <span className="font-medium text-gray-600 text-[13px] flex items-center gap-1">
+            <span>Transaksi digiflazz:</span>
+          </span>
+          <Badge variant="secondary" className="bg-orange-50 text-orange-600 border-orange-100 text-xs px-2">
+            https://api.digiflazz.com/v1/transaction
+          </Badge>
         </div>
 
-        {/* Daftar Brand Ewallet */}
-        <div className="rounded-xl bg-white/80 shadow-lg p-4 md:p-8 mb-12 border border-slate-100 transition-colors">
+        {/* Menu E-wallet Grid */}
+        <div className="bg-white mt-4 rounded-2xl shadow-lg px-3 py-5 mb-7 animate-fade-in border border-orange-100">
+          <div className="text-base font-semibold text-gray-800 mb-3 text-center">
+            Pilih E-Wallet Favorit Anda
+          </div>
           {isLoading ? (
-            <div className="text-center py-8 text-muted-foreground text-base font-semibold animate-pulse">
-              Memuat produk e-wallet dari database...
+            <div className="text-center py-7 text-orange-500 animate-pulse font-semibold">
+              Memuat produk e-wallet...
             </div>
           ) : isError ? (
-            <div className="text-center py-8 text-red-500 font-medium">
+            <div className="text-center py-7 text-red-500 font-medium">
               Gagal memuat produk e-wallet.
             </div>
           ) : ewalletProducts.length === 0 ? (
-            <div className="text-center text-muted-foreground text-base">Tidak ada produk e-wallet tersedia.</div>
+            <div className="text-center text-muted-foreground text-base">
+              Tidak ada produk e-wallet tersedia.
+            </div>
           ) : (
             <EwalletBrandGrid brandGroups={brandGroups} />
           )}
+        </div>
+
+        {/* Catatan */}
+        <div className="text-xs text-gray-500 text-center mb-3">
+          Semua layanan transaksi dompet digital didukung 24 jam & aman.
         </div>
       </div>
     </div>
@@ -85,4 +120,3 @@ const EWalletTransaksi = () => {
 };
 
 export default EWalletTransaksi;
-
