@@ -7,7 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Phone, Mail } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -16,6 +18,7 @@ const Login = () => {
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const { signIn, signUp } = useAuth();
+  const { toast } = useToast();
   const navigate = useNavigate();
 
   const formatWhatsAppNumber = (number: string) => {
@@ -48,10 +51,45 @@ const Login = () => {
     setLoading(false);
   };
 
+  const checkUserExists = async (email: string) => {
+    try {
+      // Check if user exists in profiles table
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error checking user:', error);
+        return false;
+      }
+
+      return !!data;
+    } catch (error) {
+      console.error('Error checking user existence:', error);
+      return false;
+    }
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    
     try {
+      // Check if user already exists
+      const userExists = await checkUserExists(email);
+      
+      if (userExists) {
+        toast({
+          title: "Akun Sudah Terdaftar",
+          description: "Email ini sudah terdaftar. Silakan login atau gunakan email lain.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       const formattedWhatsapp = formatWhatsAppNumber(whatsappNumber);
       await signUp(email, password, fullName, formattedWhatsapp);
       
