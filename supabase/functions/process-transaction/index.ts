@@ -28,24 +28,26 @@ serve(async (req) => {
     let body: any;
     try {
       body = await req.json();
+      console.log('Request body:', body);
     } catch (e) {
       console.error('Body parsing error:', e);
-      return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+      return new Response(JSON.stringify({ error: 'Invalid JSON body', detail: `${e}` }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Body validation (harus ada transaction_id)
+    // Body validation (transaction_id wajib)
     const { transaction_id } = body;
     if (!transaction_id) {
+      console.error('Request missing transaction_id:', body);
       return new Response(JSON.stringify({ error: 'Missing transaction_id' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Get transaction details
+    // Get transaction
     const { data: transaction, error: selectError } = await supabaseClient
       .from('transactions')
       .select('*')
@@ -54,13 +56,13 @@ serve(async (req) => {
 
     if (selectError || !transaction) {
       console.error('Transaction not found:', selectError, transaction_id);
-      return new Response(JSON.stringify({ error: 'Transaction not found' }), {
+      return new Response(JSON.stringify({ error: 'Transaction not found', detail: selectError }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Get user profile for balance check
+    // Get user profile buat cek balance
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('balance')
@@ -69,25 +71,25 @@ serve(async (req) => {
 
     if (profileError || !profile) {
       console.error('User profile not found or error:', profileError, transaction.user_id);
-      return new Response(JSON.stringify({ error: 'User profile not found' }), {
+      return new Response(JSON.stringify({ error: 'User profile not found', detail: profileError }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Check if user has sufficient balance
+    // Cek cukup saldo
     if (
       typeof transaction.price !== 'number' ||
       profile.balance < transaction.price
     ) {
       console.error('Insufficient balance. User balance:', profile.balance, 'Required:', transaction.price);
-      return new Response(JSON.stringify({ error: 'Insufficient balance' }), {
+      return new Response(JSON.stringify({ error: 'Insufficient balance', detail: { user_balance: profile.balance, need: transaction.price } }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Deduct balance from user + debug
+    // Deduct balance from user + debug logging
     console.log("About to deduct balance, params:", {
       p_user_id: transaction.user_id,
       p_amount: -transaction.price,
@@ -123,10 +125,25 @@ serve(async (req) => {
         sku: transaction.sku,
         ref_id: transaction.ref_id,
       });
-      console.log('Digiflazz API Response:', digiflazzResponse);
+      console.log('Digiflazz API Raw Response:', digiflazzResponse);
 
-      // If Digiflazz error
-      if (!digiflazzResponse || digiflazzResponse.data?.status === 'FAILED' || digiflazzResponse.data?.rc === '39') {
+      // Digiflazz error wrapper/status check
+      if (!digiflazzResponse || !digiflazzResponse.data) {
+        console.error('Digiflazz: Malformed or missing data field.', digiflazzResponse);
+        return new Response(JSON.stringify({ 
+          error: 'Digiflazz API responded with malformed or missing data',
+          digiflazz_response: digiflazzResponse
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const dStatus = String(digiflazzResponse.data.status || '').toLowerCase();
+
+      // GAGAL, FAILED, error code, dsb
+      if (dStatus === 'gagal' || dStatus === 'failed' || digiflazzResponse.data.rc === '39') {
+        console.error('Digiflazz Failure:', digiflazzResponse.data);
         return new Response(JSON.stringify({ 
           error: 'Digiflazz API responded with failure',
           digiflazz_response: digiflazzResponse
@@ -137,36 +154,51 @@ serve(async (req) => {
       }
     } catch (digiflazzErr) {
       console.error('Digiflazz API error:', digiflazzErr);
-      return new Response(JSON.stringify({ error: 'Digiflazz API error', detail: digiflazzErr?.message }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Update transaction with Digiflazz response
-    const { error: updateError } = await supabaseClient
-      .from('transactions')
-      .update({
-        status: digiflazzResponse.data?.status || 'pending',
-        message: digiflazzResponse.data?.message,
-        digiflazz_trx_id: digiflazzResponse.data?.trx_id,
-        rc: digiflazzResponse.data?.rc,
-        serial_number: digiflazzResponse.data?.sn,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', transaction_id);
-
-    if (updateError) {
-      console.error('Error updating transaction:', updateError);
       return new Response(JSON.stringify({ 
-        error: 'Error updating transaction', 
-        detail: updateError.message 
+        error: 'Digiflazz API error', 
+        detail: digiflazzErr?.message ?? digiflazzErr
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
+    // Update transaction dengan result Digiflazz
+    try {
+      const { error: updateError } = await supabaseClient
+        .from('transactions')
+        .update({
+          status: digiflazzResponse.data?.status || 'pending',
+          message: digiflazzResponse.data?.message,
+          digiflazz_trx_id: digiflazzResponse.data?.trx_id ?? '',
+          rc: digiflazzResponse.data?.rc,
+          serial_number: digiflazzResponse.data?.sn ?? '',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', transaction_id);
+
+      if (updateError) {
+        console.error('Error updating transaction:', updateError);
+        return new Response(JSON.stringify({ 
+          error: 'Error updating transaction', 
+          detail: updateError.message 
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    } catch (updateErr) {
+      console.error('Exception during transaction update:', updateErr);
+      return new Response(JSON.stringify({ 
+        error: 'Exception updating transaction',
+        detail: updateErr?.message ?? updateErr
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Success return
     return new Response(JSON.stringify({ 
       success: true, 
       transaction: digiflazzResponse.data 
