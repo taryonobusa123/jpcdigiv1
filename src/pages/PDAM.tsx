@@ -15,6 +15,16 @@ const PDAM = () => {
   const { data: products, isLoading: isLoadingProducts, error: productError } = usePDAMProducts();
   const { mutate, isPending } = usePDAMCheck();
 
+  // Filter hanya produk PDAM Sumedang (pascabayar/PDAM)
+  const filteredProducts = products
+    ? products.filter(
+        (product: any) =>
+          // filter berdasarkan kategori PDAM dan nama yang mengandung 'sumedang' (tidak case sensitive)
+          (typeof product.product_name === 'string') &&
+          product.product_name.toLowerCase().includes('sumedang')
+      )
+    : [];
+
   const handleCheck = () => {
     setCustomerData(null);
     if (!selectedProduct) return;
@@ -45,16 +55,19 @@ const PDAM = () => {
       <div className="p-4 space-y-4">
         <div className="bg-white rounded-xl shadow-md p-4 mb-3">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            Pilih Wilayah PDAM
+            Pilih Wilayah PDAM - Sumedang
           </h3>
           {isLoadingProducts && (
-            <div className="text-gray-500 text-center">Memuat produk PDAM...</div>
+            <div className="text-gray-500 text-center">Memuat produk PDAM Sumedang...</div>
           )}
           {productError && (
             <div className="text-red-500 text-center">Gagal memuat produk PDAM</div>
           )}
           <div className="space-y-2 max-h-72 overflow-auto">
-            {products && products.map((product: any) => (
+            {filteredProducts.length === 0 && !isLoadingProducts && (
+              <div className="text-gray-500 text-center">Produk PDAM Sumedang tidak ditemukan.</div>
+            )}
+            {filteredProducts.map((product: any) => (
               <button
                 key={product.buyer_sku_code}
                 type="button"
@@ -142,3 +155,4 @@ const PDAM = () => {
 };
 
 export default PDAM;
+
