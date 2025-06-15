@@ -3,34 +3,21 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { usePlnMeterCheck } from '@/hooks/usePlnMeterCheck';
-import { usePlnPurchase } from '@/hooks/usePlnPurchase';
+import { usePlnProducts } from '@/hooks/usePlnProducts';
+import { usePlnDirectPurchase } from '@/hooks/usePlnDirectPurchase';
 import BottomNavigation from '../components/BottomNavigation';
 import LoadingScreen from '../components/LoadingScreen';
 import PLNMeterCheck from '../components/pln/PLNMeterCheck';
-import PLNCustomerData from '../components/pln/PLNCustomerData';
-import PLNAmountSelector from '../components/pln/PLNAmountSelector';
-import PLNPurchaseSummary from '../components/pln/PLNPurchaseSummary';
+import PLNProductList from '../components/pln/PLNProductList';
 import PLNInformation from '../components/pln/PLNInformation';
 
 const PLNToken = () => {
   const { user } = useAuth();
   const [isPageLoading, setIsPageLoading] = useState(true);
-  const [customerNumber, setCustomerNumber] = useState('');
-  const [selectedAmount, setSelectedAmount] = useState('');
-  const [meterData, setMeterData] = useState(null);
+  const [meterNumber, setMeterNumber] = useState('');
   
-  const { mutate: checkMeter, isPending: isCheckingMeter } = usePlnMeterCheck();
-  const { mutate: purchaseToken, isPending: isPurchasing } = usePlnPurchase();
-
-  const amounts = [
-    { display: 'Rp 20.000', value: 20000 },
-    { display: 'Rp 50.000', value: 50000 },
-    { display: 'Rp 100.000', value: 100000 },
-    { display: 'Rp 200.000', value: 200000 },
-    { display: 'Rp 500.000', value: 500000 },
-    { display: 'Rp 1.000.000', value: 1000000 }
-  ];
+  const { data: plnProducts, isLoading: isProductsLoading } = usePlnProducts();
+  const { mutate: purchaseToken, isPending: isPurchasing } = usePlnDirectPurchase();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -40,33 +27,19 @@ const PLNToken = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleCheckMeter = async () => {
-    if (!customerNumber.trim()) return;
-
-    checkMeter(customerNumber, {
-      onSuccess: (data) => {
-        if (data.success && data.data) {
-          setMeterData(data.data);
-        }
-      }
-    });
+  const handleMeterNumberChange = (value: string) => {
+    setMeterNumber(value);
   };
 
-  const handlePurchase = async () => {
-    if (!customerNumber || !selectedAmount || !user || !meterData) return;
+  const handlePurchase = (product: any) => {
+    if (!meterNumber.trim() || !user) return;
 
     purchaseToken({
-      customer_id: customerNumber,
-      amount: parseInt(selectedAmount),
-      admin_fee: 2500,
-      customer_name: meterData.customer_name
-    }, {
-      onSuccess: () => {
-        // Reset form after successful purchase
-        setCustomerNumber('');
-        setSelectedAmount('');
-        setMeterData(null);
-      }
+      meter_number: meterNumber,
+      product_id: product.id,
+      product_name: product.product_name,
+      price: product.buyer_price,
+      sku: product.buyer_sku_code
     });
   };
 
@@ -93,31 +66,26 @@ const PLNToken = () => {
       {/* Form */}
       <div className="p-4 space-y-4">
         <PLNMeterCheck
-          customerNumber={customerNumber}
-          setCustomerNumber={setCustomerNumber}
-          onCheckMeter={handleCheckMeter}
-          isCheckingMeter={isCheckingMeter}
+          customerNumber={meterNumber}
+          setCustomerNumber={handleMeterNumberChange}
+          onCheckMeter={() => {}} // Not needed for direct purchase
+          isCheckingMeter={false}
         />
 
-        {meterData && (
-          <PLNCustomerData meterData={meterData} />
-        )}
-
-        {meterData && (
-          <PLNAmountSelector
-            amounts={amounts}
-            selectedAmount={selectedAmount}
-            onSelectAmount={setSelectedAmount}
-          />
-        )}
-
-        {selectedAmount && meterData && (
-          <PLNPurchaseSummary
-            selectedAmount={selectedAmount}
-            meterData={meterData}
+        {meterNumber.trim() && plnProducts && (
+          <PLNProductList
+            products={plnProducts}
+            meterNumber={meterNumber}
             onPurchase={handlePurchase}
-            user={user}
+            isLoading={isPurchasing}
           />
+        )}
+
+        {isProductsLoading && meterNumber.trim() && (
+          <div className="bg-white rounded-xl shadow-md p-8 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Memuat produk PLN...</p>
+          </div>
         )}
 
         <PLNInformation />
