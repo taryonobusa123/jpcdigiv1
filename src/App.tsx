@@ -20,7 +20,6 @@ import TestPurchase from "@/pages/TestPurchase";
 import PLNToken from "@/pages/PLNToken";
 import PulsaPurchase from "@/pages/PulsaPurchase";
 import WhatsAppVerificationPage from "@/pages/WhatsAppVerification";
-import TopUp from "@/pages/TopUp";
 import TopupSaldo from "@/pages/TopupSaldo";
 import TopupHistory from "@/pages/TopupHistory";
 import TopupDetail from "@/pages/TopupDetail";
@@ -59,7 +58,6 @@ const App = () => (
             <Route path="/test-purchase" element={<TestPurchase />} />
             <Route path="/pln-token" element={<PLNToken />} />
             <Route path="/pulsa" element={<PulsaPurchase />} />
-            {/* <Route path="/topup" element={<TopUp />} /> REMOVED as requested */}
             <Route path="/topup-saldo" element={<TopupSaldo />} />
             <Route path="/topup-history" element={<TopupHistory />} />
             <Route path="/topup-detail/:id" element={<TopupDetail />} />
