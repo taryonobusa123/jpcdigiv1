@@ -10,28 +10,33 @@ interface PhoneNumberInputProps {
   onOperatorDetected: (operator: string) => void;
 }
 
+// Helper untuk mengubah ke Title Case
+function toTitleCase(str: string) {
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
 const PhoneNumberInput = ({ phoneNumber, setPhoneNumber, onOperatorDetected }: PhoneNumberInputProps) => {
   const [detectedOperator, setDetectedOperator] = React.useState('');
 
   useEffect(() => {
     if (phoneNumber.length >= 4) {
       const prefix = phoneNumber.substring(0, 4);
-      
+
       let operator = '';
       if (['0811', '0812', '0813', '0821', '0822', '0851', '0852', '0853'].includes(prefix)) {
-        operator = 'TELKOMSEL';
+        operator = 'Telkomsel';
       } else if (['0814', '0815', '0816', '0855', '0856', '0857', '0858'].includes(prefix)) {
-        operator = 'INDOSAT';
+        operator = 'Indosat';
       } else if (['0817', '0818', '0819', '0859', '0877', '0878'].includes(prefix)) {
-        operator = 'XL';
+        operator = 'Xl';
       } else if (['0838', '0831', '0832', '0833'].includes(prefix)) {
-        operator = 'AXIS';
+        operator = 'Axis';
       } else if (['0895', '0896', '0897', '0898', '0899'].includes(prefix)) {
-        operator = 'TRI';
+        operator = 'Tri';
       } else if (['0881', '0882', '0883', '0884', '0885', '0886', '0887', '0888'].includes(prefix)) {
-        operator = 'SMARTFREN';
+        operator = 'Smartfren';
       }
-      
+
       setDetectedOperator(operator);
       onOperatorDetected(operator);
     } else {
