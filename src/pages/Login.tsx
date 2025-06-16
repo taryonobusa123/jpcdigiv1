@@ -17,7 +17,7 @@ const Login = () => {
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { signIn } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -36,6 +36,46 @@ const Login = () => {
     }
     
     return '+' + cleaned;
+  };
+
+  const validateInput = (email: string, password: string, fullName: string, whatsappNumber: string) => {
+    if (!email || !email.includes('@')) {
+      toast({
+        title: "Email Tidak Valid",
+        description: "Silakan masukkan email yang valid.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (!password || password.length < 6) {
+      toast({
+        title: "Password Terlalu Pendek",
+        description: "Password harus minimal 6 karakter.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (!fullName || fullName.trim().length < 2) {
+      toast({
+        title: "Nama Tidak Valid",
+        description: "Silakan masukkan nama lengkap yang valid.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (!whatsappNumber || whatsappNumber.length < 10) {
+      toast({
+        title: "Nomor WhatsApp Tidak Valid",
+        description: "Silakan masukkan nomor WhatsApp yang valid.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -98,6 +138,20 @@ const Login = () => {
     setLoading(true);
     
     try {
+      const formattedWhatsapp = formatWhatsAppNumber(whatsappNumber);
+      
+      // Validate input first
+      if (!validateInput(email, password, fullName, formattedWhatsapp)) {
+        setLoading(false);
+        return;
+      }
+
+      console.log('Starting signup process with:', {
+        email,
+        fullName: fullName.trim(),
+        whatsappNumber: formattedWhatsapp
+      });
+
       // Check if user already exists
       const userExists = await checkUserExists(email);
       
@@ -111,8 +165,6 @@ const Login = () => {
         return;
       }
 
-      const formattedWhatsapp = formatWhatsAppNumber(whatsappNumber);
-      
       // Check if WhatsApp number already exists
       const whatsappExists = await checkWhatsAppExists(formattedWhatsapp);
       
@@ -126,30 +178,65 @@ const Login = () => {
         return;
       }
 
-      await signUp(email, password, fullName, formattedWhatsapp);
-      
-      // After successful signup, also redirect to WhatsApp verification
-      navigate(`/verify-whatsapp?number=${encodeURIComponent(formattedWhatsapp)}`);
-    } catch (error: any) {
-      console.error('Sign up error:', error);
-      
-      // Handle specific database constraint errors
-      if (error.message && error.message.includes('duplicate key value violates unique constraint')) {
-        if (error.message.includes('whatsapp_number')) {
+      // Create user with Supabase Auth directly
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            full_name: fullName.trim(),
+            whatsapp_number: formattedWhatsapp,
+          },
+        },
+      });
+
+      if (authError) {
+        console.error('Auth signup error:', authError);
+        
+        // Handle specific auth errors
+        if (authError.message.includes('duplicate')) {
           toast({
-            title: "Nomor WhatsApp Sudah Terdaftar",
-            description: "Nomor WhatsApp ini sudah terdaftar. Silakan gunakan nomor lain.",
-            variant: "destructive",
-          });
-        } else if (error.message.includes('email')) {
-          toast({
-            title: "Email Sudah Terdaftar",
+            title: "Akun Sudah Terdaftar",
             description: "Email ini sudah terdaftar. Silakan login atau gunakan email lain.",
             variant: "destructive",
           });
+        } else if (authError.message.includes('invalid')) {
+          toast({
+            title: "Data Tidak Valid",
+            description: "Silakan periksa kembali data yang Anda masukkan.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Error Registrasi",
+            description: authError.message || "Terjadi kesalahan saat mendaftar. Silakan coba lagi.",
+            variant: "destructive",
+          });
         }
+        setLoading(false);
+        return;
       }
+
+      console.log('Signup successful:', authData);
+      
+      toast({
+        title: "Berhasil",
+        description: "Registrasi berhasil. Silakan cek email untuk verifikasi.",
+      });
+      
+      // After successful signup, redirect to WhatsApp verification
+      navigate(`/verify-whatsapp?number=${encodeURIComponent(formattedWhatsapp)}`);
+      
+    } catch (error: any) {
+      console.error('Unexpected signup error:', error);
+      
+      toast({
+        title: "Error Registrasi",
+        description: "Terjadi kesalahan tidak terduga. Silakan coba lagi.",
+        variant: "destructive",
+      });
     }
+    
     setLoading(false);
   };
 
