@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -7,6 +6,7 @@ export function useAdminTransactions() {
   return useQuery({
     queryKey: ['admin-transactions'],
     queryFn: async () => {
+      console.log('Fetching admin transactions...');
       const { data, error } = await supabase
         .from('transactions')
         .select(`
@@ -15,7 +15,11 @@ export function useAdminTransactions() {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching transactions:', error);
+        throw error;
+      }
+      console.log('Fetched transactions:', data);
       return data;
     },
   });
@@ -110,6 +114,8 @@ export function useRefundTransaction() {
 
   return useMutation({
     mutationFn: async (transaction: any) => {
+      console.log('Processing refund for transaction:', transaction);
+      
       // Check if already refunded
       if (transaction.is_refunded) {
         throw new Error('Transaction already refunded');
@@ -120,11 +126,14 @@ export function useRefundTransaction() {
         p_user_id: transaction.user_id,
         p_amount: transaction.price,
         p_type: 'refund',
-        p_description: `Refund untuk transaksi gagal ${transaction.ref_id}`,
+        p_description: `Refund untuk transaksi gagal ${transaction.ref_id || transaction.id}`,
         p_transaction_id: transaction.id,
       });
 
-      if (balanceError) throw balanceError;
+      if (balanceError) {
+        console.error('Balance update error:', balanceError);
+        throw balanceError;
+      }
 
       // Mark transaction as refunded
       const { error: updateError } = await supabase
@@ -135,7 +144,10 @@ export function useRefundTransaction() {
         })
         .eq('id', transaction.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Transaction update error:', updateError);
+        throw updateError;
+      }
 
       return { success: true };
     },
@@ -147,6 +159,7 @@ export function useRefundTransaction() {
       });
     },
     onError: (error) => {
+      console.error('Refund error:', error);
       toast({
         title: "Error",
         description: error.message,
