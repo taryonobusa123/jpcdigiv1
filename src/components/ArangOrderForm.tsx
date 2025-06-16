@@ -23,8 +23,8 @@ const ArangOrderForm: React.FC = () => {
   } = useForm<ArangOrder>();
 
   const onSubmit = async (data: ArangOrder) => {
-    const { error } = await supabase
-      .from<any>('orders')
+    const { error } = await (supabase as any)
+      .from('orders')
       .insert([
         {
           name: data.name,

@@ -13,8 +13,8 @@ type Order = {
 };
 
 const fetchArangOrders = async (): Promise<Order[]> => {
-  const { data, error } = await supabase
-    .from<any>('orders')
+  const { data, error } = await (supabase as any)
+    .from('orders')
     .select('id,name,phone,address,quantity,created_at')
     .eq('product', 'Arang Kayu')
     .order('created_at', { ascending: false });
