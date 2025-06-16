@@ -72,6 +72,27 @@ const Login = () => {
     }
   };
 
+  const checkWhatsAppExists = async (whatsappNumber: string) => {
+    try {
+      // Check if WhatsApp number exists in profiles table
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, whatsapp_number')
+        .eq('whatsapp_number', whatsappNumber)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error checking WhatsApp number:', error);
+        return false;
+      }
+
+      return !!data;
+    } catch (error) {
+      console.error('Error checking WhatsApp number existence:', error);
+      return false;
+    }
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -91,12 +112,43 @@ const Login = () => {
       }
 
       const formattedWhatsapp = formatWhatsAppNumber(whatsappNumber);
+      
+      // Check if WhatsApp number already exists
+      const whatsappExists = await checkWhatsAppExists(formattedWhatsapp);
+      
+      if (whatsappExists) {
+        toast({
+          title: "Nomor WhatsApp Sudah Terdaftar",
+          description: "Nomor WhatsApp ini sudah terdaftar. Silakan gunakan nomor lain.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       await signUp(email, password, fullName, formattedWhatsapp);
       
       // After successful signup, also redirect to WhatsApp verification
       navigate(`/verify-whatsapp?number=${encodeURIComponent(formattedWhatsapp)}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Sign up error:', error);
+      
+      // Handle specific database constraint errors
+      if (error.message && error.message.includes('duplicate key value violates unique constraint')) {
+        if (error.message.includes('whatsapp_number')) {
+          toast({
+            title: "Nomor WhatsApp Sudah Terdaftar",
+            description: "Nomor WhatsApp ini sudah terdaftar. Silakan gunakan nomor lain.",
+            variant: "destructive",
+          });
+        } else if (error.message.includes('email')) {
+          toast({
+            title: "Email Sudah Terdaftar",
+            description: "Email ini sudah terdaftar. Silakan login atau gunakan email lain.",
+            variant: "destructive",
+          });
+        }
+      }
     }
     setLoading(false);
   };
