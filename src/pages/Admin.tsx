@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useAdminStats, useAdminTransactions, useAdminTopupRequests, useUpdateTopupRequest, useSyncProducts } from '@/hooks/useAdmin';
+import { useAdminStats, useAdminTransactions, useAdminTopupRequests, useUpdateTopupRequest, useSyncProducts, useRefundTransaction } from '@/hooks/useAdmin';
 import { useProducts } from '@/hooks/useProducts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,7 @@ export default function Admin() {
   const { data: topupRequests, isLoading: topupLoading } = useAdminTopupRequests();
   const { data: products, isLoading: productsLoading } = useProducts();
   const updateTopupRequest = useUpdateTopupRequest();
+  const refundTransaction = useRefundTransaction();
   const syncProducts = useSyncProducts();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -56,6 +58,14 @@ export default function Admin() {
       await updateTopupRequest.mutateAsync({ id, status, adminNotes });
     } catch (error) {
       console.error('Error updating topup request:', error);
+    }
+  };
+
+  const handleRefund = async (transaction: any) => {
+    try {
+      await refundTransaction.mutateAsync(transaction);
+    } catch (error) {
+      console.error('Error refunding transaction:', error);
     }
   };
 
@@ -111,6 +121,7 @@ export default function Admin() {
                   isLoading={transactionsLoading}
                   formatCurrency={formatCurrency}
                   formatDate={formatDate}
+                  onRefund={handleRefund}
                 />
               </CardContent>
             </Card>

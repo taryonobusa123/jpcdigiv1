@@ -104,6 +104,58 @@ export function useUpdateTopupRequest() {
   });
 }
 
+export function useRefundTransaction() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (transaction: any) => {
+      // Check if already refunded
+      if (transaction.is_refunded) {
+        throw new Error('Transaction already refunded');
+      }
+
+      // Refund the balance to user
+      const { error: balanceError } = await supabase.rpc('update_user_balance', {
+        p_user_id: transaction.user_id,
+        p_amount: transaction.price,
+        p_type: 'refund',
+        p_description: `Refund untuk transaksi gagal ${transaction.ref_id}`,
+        p_transaction_id: transaction.id,
+      });
+
+      if (balanceError) throw balanceError;
+
+      // Mark transaction as refunded
+      const { error: updateError } = await supabase
+        .from('transactions')
+        .update({
+          is_refunded: true,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', transaction.id);
+
+      if (updateError) throw updateError;
+
+      return { success: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-transactions'] });
+      toast({
+        title: "Berhasil",
+        description: "Saldo berhasil dikembalikan ke pelanggan",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
 export function useSyncProducts() {
   const { toast } = useToast();
 

@@ -1,8 +1,16 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { RotateCcw } from "lucide-react";
 
-export default function AdminTransactionsTable({ transactions, isLoading, formatCurrency, formatDate }) {
+export default function AdminTransactionsTable({ 
+  transactions, 
+  isLoading, 
+  formatCurrency, 
+  formatDate,
+  onRefund 
+}) {
   return (
     <div>
       {isLoading ? (
@@ -17,6 +25,7 @@ export default function AdminTransactionsTable({ transactions, isLoading, format
               <TableHead>Amount</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Date</TableHead>
+              <TableHead>Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -43,6 +52,20 @@ export default function AdminTransactionsTable({ transactions, isLoading, format
                   </Badge>
                 </TableCell>
                 <TableCell>{formatDate(transaction.created_at)}</TableCell>
+                <TableCell>
+                  {transaction.status === "Gagal" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onRefund(transaction)}
+                      disabled={transaction.is_refunded}
+                      className="gap-2"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      {transaction.is_refunded ? "Refunded" : "Refund"}
+                    </Button>
+                  )}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
